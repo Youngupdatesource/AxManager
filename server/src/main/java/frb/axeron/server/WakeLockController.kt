@@ -27,6 +27,7 @@ class WakeLockController(
     companion object {
         private val LOGGER = Logger("WakeLockController")
 
+        const val NO_TIMEOUT = 0L
         const val DEFAULT_TAG = "axeron::wakelock"
         const val DEFAULT_PACKAGE = "axeron_server"
         const val DEFAULT_LEASE_TIMEOUT_MS = 10 * 60 * 1000L
@@ -75,11 +76,11 @@ class WakeLockController(
     private var stopped = false
     private var backoffMs = RETRY_BASE_MS
 
-    private val releaseTask = Runnable { onReleaseGrace() }
-    private val retryTask = Runnable { reconcile() }
+    private val releaseTask = task { onReleaseGrace() }
+    private val retryTask = task { reconcile() }
 
     fun acquire(owner: String, timeoutMs: Long = DEFAULT_LEASE_TIMEOUT_MS): Lease {
-        val lease = Lease(ids.incrementAndGet(), owner, timeoutMs.coerceAtLeast(1L), this)
+        val lease = Lease(ids.incrementAndGet(), owner, timeoutMs.coerceAtLeast(0L), this)
         if (!post { onOpen(lease) }) {
             lease.markClosed()
         }
@@ -123,15 +124,26 @@ class WakeLockController(
         watchers.shutdownNow()
     }
 
-    internal fun post(block: () -> Unit): Boolean = handler.post { block() }
+    internal fun post(block: () -> Unit): Boolean = handler.post(task(block))
+
+    private fun task(block: () -> Unit): Runnable = Runnable {
+        try {
+            block()
+        } catch (t: Throwable) {
+            LOGGER.e("wakelock task failed", t)
+        }
+    }
 
     private fun onOpen(lease: Lease) {
         if (stopped || lease.isClosed) return
         leases[lease.id] = lease
-        val expiry = Runnable { expire(lease) }
+        val expiry = task { expire(lease) }
         lease.expiry = expiry
-        handler.postDelayed(expiry, lease.timeoutMs)
-        LOGGER.i("lease open #${lease.id} owner=${lease.owner} timeout=${lease.timeoutMs}ms active=${leases.size}")
+        if (lease.timeoutMs > 0) {
+            handler.postDelayed(expiry, lease.timeoutMs)
+        }
+        val timeoutText = if (lease.timeoutMs > 0) "${lease.timeoutMs}ms" else "none"
+        LOGGER.i("lease open #${lease.id} owner=${lease.owner} timeout=$timeoutText active=${leases.size}")
         reconcile()
     }
 
@@ -201,7 +213,7 @@ class WakeLockController(
             backoffMs = RETRY_BASE_MS
             LOGGER.i("wakelock acquired")
             true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             LOGGER.e("wakelock acquire failed, retry in ${backoffMs}ms", e)
             false
         }
@@ -214,7 +226,7 @@ class WakeLockController(
             backoffMs = RETRY_BASE_MS
             LOGGER.i("wakelock released")
             true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             LOGGER.e("wakelock release failed, retry in ${backoffMs}ms", e)
             false
         }

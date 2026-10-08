@@ -76,6 +76,8 @@ open class AxeronService :
 
     companion object {
         private const val STARTUP_LEASE_MS = 30_000L
+        private const val MANAGER_LOOKUP_ATTEMPTS = 4
+        private const val MANAGER_LOOKUP_DELAY_MS = 750L
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -284,10 +286,20 @@ open class AxeronService :
         return AxeronConfigManager()
     }
 
+    private fun lookupManagerUid(): Int {
+        for (attempt in 1..MANAGER_LOOKUP_ATTEMPTS) {
+            val uid = getManagerApplicationInfo()?.uid
+            if (uid != null) return uid
+            LOGGER.w("manager app lookup failed, attempt $attempt of $MANAGER_LOOKUP_ATTEMPTS")
+            if (attempt < MANAGER_LOOKUP_ATTEMPTS) SystemClock.sleep(MANAGER_LOOKUP_DELAY_MS)
+        }
+        LOGGER.e("manager app not found, exiting", IllegalStateException("manager missing"))
+        exitProcess(ServerConstants.MANAGER_APP_NOT_FOUND)
+    }
+
     @Synchronized
     fun checkCaller(callingUid: Int): Boolean {
-        val managerAppUid: Int =
-            getManagerApplicationInfo()?.uid ?: exitProcess(ServerConstants.MANAGER_APP_NOT_FOUND)
+        val managerAppUid: Int = lookupManagerUid()
 
         val shizukuManagerUid: Int = getShizukuManagerApplicationInfo()?.uid ?: managerAppUid
         return UserHandleCompat.getAppId(callingUid) == managerAppUid || UserHandleCompat.getAppId(
@@ -324,6 +336,12 @@ open class AxeronService :
         )
 
 
+    private val ecoWakeLockMarker =
+        File(
+            PathHelper.getWorkingPath(isRoot, AxeronApiConstant.folder.PARENT),
+            "ax_eco_wakelock"
+        )
+
     init {
 
         HandlerUtil.setMainHandler(mainHandler)
@@ -354,7 +372,13 @@ open class AxeronService :
             sendBinderToManager()
         }
 
-        wakeLock.acquire("startup", STARTUP_LEASE_MS)
+        if (ecoWakeLockMarker.exists()) {
+            wakeLock.acquire("startup", STARTUP_LEASE_MS)
+            LOGGER.i("wakelock mode eco, marker=${ecoWakeLockMarker.path}")
+        } else {
+            wakeLock.acquire("keepalive", WakeLockController.NO_TIMEOUT)
+            LOGGER.i("wakelock mode keepalive, create ${ecoWakeLockMarker.path} to enable eco mode")
+        }
     }
 
     fun sendBinderToClient() {
