@@ -20,7 +20,8 @@ class WakeLockController(
     private val powerManager: () -> IPowerManager,
     private val tag: String = DEFAULT_TAG,
     private val packageName: String = DEFAULT_PACKAGE,
-    private val releaseGraceMs: Long = DEFAULT_RELEASE_GRACE_MS
+    private val releaseGraceMs: Long = DEFAULT_RELEASE_GRACE_MS,
+    private val onIdle: (() -> Unit)? = null
 ) {
 
     companion object {
@@ -167,6 +168,17 @@ class WakeLockController(
         if (!nativeRelease()) {
             handler.postDelayed(releaseTask, backoffMs)
             backoffMs = (backoffMs * 2).coerceAtMost(RETRY_MAX_MS)
+        } else {
+            runIdleHook()
+        }
+    }
+
+    private fun runIdleHook() {
+        val hook = onIdle ?: return
+        try {
+            hook()
+        } catch (e: Exception) {
+            LOGGER.e("idle hook failed", e)
         }
     }
 

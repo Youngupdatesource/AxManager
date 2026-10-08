@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
 import android.util.Base64
+import android.util.LruCache
 import android.view.Window
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -35,6 +36,9 @@ import java.util.concurrent.CompletableFuture
 /**
  * Unrooted by FahrezONE
  */
+private const val ICON_CACHE_CHARS = 4 * 1024 * 1024
+private const val ICON_PREFETCH_LIMIT = 48
+
 class KsuWebInterface(
     val context: Context,
     private val webView: WebView,
@@ -334,59 +338,58 @@ class KsuWebInterface(
         return jsonArray.toString()
     }
 
-    private val packageIconCache = HashMap<String, String>()
+    private val packageIconCache = object : LruCache<String, String>(ICON_CACHE_CHARS) {
+        override fun sizeOf(key: String, value: String): Int = value.length
+    }
+
+    private fun encodeIcon(
+        pkgName: String,
+        size: Int,
+        out: ByteArrayOutputStream,
+        knownInfo: ApplicationInfo? = null
+    ): String {
+        val key = "$pkgName@$size"
+        packageIconCache.get(key)?.let { return it }
+        val encoded = try {
+            val pm = context.packageManager
+            val appInfo = knownInfo ?: pm.getApplicationInfo(pkgName, 0)
+            val drawable = appInfo.loadIcon(pm)
+            val bitmap = drawableToBitmap(drawable, size)
+            val ownsBitmap = bitmap !== (drawable as? BitmapDrawable)?.bitmap
+            out.reset()
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            if (ownsBitmap) bitmap.recycle()
+            "data:image/png;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+        } catch (_: Exception) {
+            ""
+        }
+        packageIconCache.put(key, encoded)
+        return encoded
+    }
 
     @JavascriptInterface
     fun cacheAllPackageIcons(size: Int) {
-        val pm = context.packageManager
         val packages = Axeron.getPackages(0)
-        val outputStream = ByteArrayOutputStream()
+        val out = ByteArrayOutputStream()
+        var warmed = 0
         for (pkg in packages) {
-            val pkgName = pkg.packageName
-            if (packageIconCache.containsKey(pkgName)) continue
-            try {
-                val appInfo = pkg.applicationInfo!!
-                val drawable = appInfo.loadIcon(pm)
-                val bitmap = drawableToBitmap(drawable, size)
-                outputStream.reset()
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                val byteArray = outputStream.toByteArray()
-                val iconBase64 =
-                    "data:image/png;base64," + Base64.encodeToString(byteArray, Base64.NO_WRAP)
-                packageIconCache[pkgName] = iconBase64
-            } catch (_: Exception) {
-                packageIconCache[pkgName] = ""
-            }
+            if (warmed >= ICON_PREFETCH_LIMIT) break
+            if (packageIconCache.get("${pkg.packageName}@$size") != null) continue
+            encodeIcon(pkg.packageName, size, out, pkg.applicationInfo)
+            warmed++
         }
     }
 
     @JavascriptInterface
     fun getPackagesIcons(packageNamesJson: String, size: Int): String {
-        val pm = context.packageManager
         val packageNames = JSONArray(packageNamesJson)
         val jsonArray = JSONArray()
-        val outputStream = ByteArrayOutputStream()
+        val out = ByteArrayOutputStream()
         for (i in 0 until packageNames.length()) {
             val pkgName = packageNames.getString(i)
             val obj = JSONObject()
             obj.put("packageName", pkgName)
-            var iconBase64 = packageIconCache[pkgName]
-            if (iconBase64 == null) {
-                try {
-                    val appInfo = pm.getApplicationInfo(pkgName, 0)
-                    val drawable = appInfo.loadIcon(pm)
-                    val bitmap = drawableToBitmap(drawable, size)
-                    outputStream.reset()
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                    val byteArray = outputStream.toByteArray()
-                    iconBase64 =
-                        "data:image/png;base64," + Base64.encodeToString(byteArray, Base64.NO_WRAP)
-                } catch (_: Exception) {
-                    iconBase64 = ""
-                }
-                packageIconCache[pkgName] = iconBase64
-            }
-            obj.put("icon", iconBase64)
+            obj.put("icon", encodeIcon(pkgName, size, out))
             jsonArray.put(obj)
         }
         return jsonArray.toString()

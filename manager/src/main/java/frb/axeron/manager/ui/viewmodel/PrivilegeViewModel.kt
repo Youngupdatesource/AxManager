@@ -42,10 +42,7 @@ class PrivilegeViewModel(application: Application) : AndroidViewModel(applicatio
                 .filter { app ->
                     app.label.contains(currentSearch, true) ||
                             app.packageName.contains(currentSearch, true) ||
-                            //Panggil hanya jika perlu
-                            (currentSearch.any { it.code > 128 } &&
-                                    HanziToPinyin.getInstance().toPinyinString(app.label)
-                                        .contains(currentSearch, true))
+                            (app.pinyin.isNotEmpty() && app.pinyin.contains(currentSearch, true))
                 }
                 .toList()
         }
@@ -113,7 +110,8 @@ class PrivilegeViewModel(application: Application) : AndroidViewModel(applicatio
                     uid to AppsViewModel.AppInfo(
                         label = label,
                         packageInfo = packageInfo,
-                        isAdded = granted(uid)
+                        isAdded = granted(uid),
+                        pinyin = appSearchPinyin(label)
                     )
                 }
             }

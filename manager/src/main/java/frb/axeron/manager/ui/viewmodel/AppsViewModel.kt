@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.graphics.Bitmap
+import android.util.LruCache
 import android.os.Parcelable
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -31,12 +32,24 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 
+private const val WEB_ICON_SIZE_PX = 256
+private const val WEB_ICON_CACHE_BYTES = 2 * 1024 * 1024
+
+private val webIconPngCache = object : LruCache<String, ByteArray>(WEB_ICON_CACHE_BYTES) {
+    override fun sizeOf(key: String, value: ByteArray): Int = value.size
+}
+
+fun appSearchPinyin(label: String): String {
+    return if (label.all { it.code < 128 }) "" else HanziToPinyin.getInstance().toPinyinString(label)
+}
+
 class AppsViewModel(application: Application) : AndroidViewModel(application) {
     @Parcelize
     data class AppInfo(
         val label: String,
         val packageInfo: PackageInfo,
         val isAdded: Boolean,
+        val pinyin: String = "",
     ) : Parcelable {
         class Handler : AxWebLoader.PathHandler {
             override fun handle(
@@ -44,15 +57,22 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
                 view: WebView?,
                 request: WebResourceRequest?
             ): WebResourceResponse? {
-                val packageName = request!!.url.path.toString().substring(1) // buang leading "/"
-                val icon: Bitmap? = AppIconUtil.loadAppIconSync(packageName, 512)
-                if (icon != null) {
+                val packageName = request!!.url.path.toString().substring(1)
+                val bytes = webIconPngCache.get(packageName) ?: run {
+                    val icon: Bitmap = AppIconUtil.loadAppIconSync(packageName, WEB_ICON_SIZE_PX)
+                        ?: return null
                     val stream = ByteArrayOutputStream()
                     icon.compress(Bitmap.CompressFormat.PNG, 100, stream)
-                    val inputStream = ByteArrayInputStream(stream.toByteArray())
-                    return WebResourceResponse("image/png", null, inputStream)
+                    stream.toByteArray().also { webIconPngCache.put(packageName, it) }
                 }
-                return null
+                return WebResourceResponse(
+                    "image/png",
+                    null,
+                    200,
+                    "OK",
+                    mapOf("Cache-Control" to "max-age=86400"),
+                    ByteArrayInputStream(bytes)
+                )
             }
 
         }
@@ -71,22 +91,20 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
     )
     var search by mutableStateOf("")
 
+    private fun AppInfo.matches(query: String): Boolean {
+        return label.contains(query, ignoreCase = true) ||
+                packageName.contains(query, ignoreCase = true) ||
+                (pinyin.isNotEmpty() && pinyin.contains(query, ignoreCase = true))
+    }
+
     val addedList by derivedStateOf {
-        addedApps.filter {
-            it.label.contains(search, ignoreCase = true) ||
-                    it.packageName.contains(search, ignoreCase = true) ||
-                    HanziToPinyin.getInstance().toPinyinString(it.label)
-                        .contains(search, ignoreCase = true)
-        }
+        val query = search
+        addedApps.filter { it.matches(query) }
     }
 
     val installedList by derivedStateOf {
-        installedApps.filter {
-            it.label.contains(search, ignoreCase = true) ||
-                    it.packageName.contains(search, ignoreCase = true) ||
-                    HanziToPinyin.getInstance().toPinyinString(it.label)
-                        .contains(search, ignoreCase = true)
-        }
+        val query = search
+        installedApps.filter { it.matches(query) }
     }
 
     private val prefs = application.getSharedPreferences("apps_prefs", Context.MODE_PRIVATE)
@@ -109,17 +127,18 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
             addedPackageNames = getSavedPackageNames()
             val packages = Axeron.getPackages(0)
 
-            val apps = packages.map {
-                val appInfo = it.applicationInfo!!
-                AppInfo(
-                    label = appInfo.loadLabel(pm).toString(),
-                    packageInfo = it,
-                    isAdded = it.packageName in addedPackageNames
-                )
-            }.filterNot {
-                // jangan masukin ke list kalau system app atau app lo sendiri
+            val apps = packages.filterNot {
                 it.packageName == axeronApp.packageName ||
-                        it.packageInfo.applicationInfo!!.flags.and(ApplicationInfo.FLAG_SYSTEM) != 0
+                        it.applicationInfo!!.flags.and(ApplicationInfo.FLAG_SYSTEM) != 0
+            }.map {
+                val appInfo = it.applicationInfo!!
+                val label = appInfo.loadLabel(pm).toString()
+                AppInfo(
+                    label = label,
+                    packageInfo = it,
+                    isAdded = it.packageName in addedPackageNames,
+                    pinyin = appSearchPinyin(label)
+                )
             }
 
             installedApps = apps

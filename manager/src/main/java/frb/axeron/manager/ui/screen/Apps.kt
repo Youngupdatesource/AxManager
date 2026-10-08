@@ -44,8 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import frb.axeron.manager.ui.component.AppIcon
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.AddAppsScreenDestination
@@ -156,17 +155,14 @@ fun AppsScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelGloba
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(app.packageInfo)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = app.label,
-                                modifier = Modifier
+                            AppIcon(
+ packageInfo = app.packageInfo,
+ contentDescription = app.label,
+ modifier = Modifier
                                     .padding(4.dp)
                                     .width(48.dp)
                                     .height(48.dp)
-                            )
+)
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(

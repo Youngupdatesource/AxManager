@@ -256,7 +256,7 @@ fun SettingsScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelG
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.RestartAlt,
-                                                contentDescription = "Re-Activate AxManager"
+                                                contentDescription = "Re-Activate axm-Next"
                                             )
                                         }
                                     }

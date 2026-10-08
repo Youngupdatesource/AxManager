@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,8 +22,10 @@ import frb.axeron.api.core.Engine;
  */
 public class AppIconUtil {
 
-    private static final Map<String, WeakReference<Bitmap>> iconCache = new HashMap<>();
-    private static final Map<String, Result> resultListeners = new HashMap<>();
+    private static final Map<String, WeakReference<Bitmap>> iconCache =
+            Collections.synchronizedMap(new HashMap<>());
+    private static final Map<String, Result> resultListeners =
+            Collections.synchronizedMap(new HashMap<>());
 
     public static Bitmap loadAppIconSync(String packageName, int sizePx) {
         Bitmap cached = getFromCache(packageName);
@@ -84,7 +87,12 @@ public class AppIconUtil {
 
     private static void putToCache(Bitmap bmp, String packageName) {
         if (bmp != null) {
-            iconCache.put(packageName, new WeakReference<>(bmp));
+            synchronized (iconCache) {
+                if (iconCache.size() > 64) {
+                    iconCache.values().removeIf(ref -> ref.get() == null);
+                }
+                iconCache.put(packageName, new WeakReference<>(bmp));
+            }
         }
     }
 

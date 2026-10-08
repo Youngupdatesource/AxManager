@@ -241,49 +241,10 @@ class AxActivity : ComponentActivity() {
                         },
                         defaultTransitions = object : NavHostAnimatedDestinationStyle() {
                             override val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
-                                get() = {
-                                    val initialState = initialState.destination.route
-                                    val targetState = targetState.destination.route
-
-                                    // Cari indeks destinasi di BottomBar
-                                    val initialIndex = BottomBarDestination.entries.find { it.direction.route == initialState }?.ordinal ?: -1
-                                    val targetIndex = BottomBarDestination.entries.find { it.direction.route == targetState }?.ordinal ?: -1
-
-                                    if (initialIndex != -1 && targetIndex != -1) {
-                                        // Jika pindah antar tab BottomBar
-                                        if (targetIndex > initialIndex) {
-                                            // Geser ke kiri (masuk dari kanan)
-                                            slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) + fadeIn()
-                                        } else {
-                                            // Geser ke kanan (masuk dari kiri)
-                                            slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(300)) + fadeIn()
-                                        }
-                                    } else {
-                                        // Animasi default jika bukan antar tab (misal masuk ke detail)
-                                        fadeIn(animationSpec = tween(300))
-                                    }
-                                }
+                                get() = { fadeIn(animationSpec = tween(durationMillis = 160, delayMillis = 60)) }
 
                             override val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
-                                get() = {
-                                    val initialState = initialState.destination.route
-                                    val targetState = targetState.destination.route
-
-                                    val initialIndex = BottomBarDestination.entries.find { it.direction.route == initialState }?.ordinal ?: -1
-                                    val targetIndex = BottomBarDestination.entries.find { it.direction.route == targetState }?.ordinal ?: -1
-
-                                    if (initialIndex != -1 && targetIndex != -1) {
-                                        if (targetIndex > initialIndex) {
-                                            // Keluar ke kiri
-                                            slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(300)) + fadeOut()
-                                        } else {
-                                            // Keluar ke kanan
-                                            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + fadeOut()
-                                        }
-                                    } else {
-                                        fadeOut(animationSpec = tween(300))
-                                    }
-                                }
+                                get() = { fadeOut(animationSpec = tween(durationMillis = 90)) }
                         }
                     )
                 }

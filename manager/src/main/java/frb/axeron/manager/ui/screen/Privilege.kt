@@ -25,8 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import frb.axeron.manager.ui.component.AppIcon
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -111,17 +110,14 @@ fun PrivilegeScreen(
                             )
                         },
                         leadingContent = {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(app.packageInfo)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = app.label,
-                                modifier = Modifier
+                            AppIcon(
+ packageInfo = app.packageInfo,
+ contentDescription = app.label,
+ modifier = Modifier
                                     .padding(4.dp)
                                     .width(48.dp)
                                     .height(48.dp)
-                            )
+)
                         },
                         trailingContent = {
                             Switch(

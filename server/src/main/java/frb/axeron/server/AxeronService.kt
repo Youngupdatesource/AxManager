@@ -270,7 +270,7 @@ open class AxeronService :
         }
     }
 
-    val wakeLock = WakeLockController({ powerManager.get() })
+    val wakeLock = WakeLockController({ powerManager.get() }, onIdle = { Runtime.getRuntime().gc() })
 
     override fun onCreateUserServiceManager(): AxeronUserServiceManager {
         return AxeronUserServiceManager(getEnvironment(TYPE_ENV)?.getEnv())

@@ -16,11 +16,8 @@ plugins {
 }
 
 apply(from = "api/manifest.gradle.kts")
-val gitCommitCount = providers.exec {
-    commandLine("git", "rev-list", "--count", "HEAD")
-}.standardOutput.asText.get().trim().toInt()
 val verCode = findProperty("api_version_code") as Int
-val verName = "${findProperty("api_version_name")}.r${gitCommitCount}"
+val verName = "1.0"
 
 val localProperties = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
