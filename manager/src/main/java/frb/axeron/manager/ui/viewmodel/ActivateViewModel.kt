@@ -27,9 +27,14 @@ import frb.axeron.api.core.AxeronSettings
 import frb.axeron.api.core.Starter
 import frb.axeron.manager.adb.AdbStarter
 import frb.axeron.manager.adb.AdbStarter.stopTcp
+import frb.axeron.manager.AxeronApplication.Companion.axeronApp
 import frb.axeron.manager.adb.AdbStateInfo
+import frb.axeron.manager.service.ServerGuard
+import frb.axeron.manager.service.ServerHealthScheduler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
@@ -45,6 +50,9 @@ class ActivateViewModel : ViewModel() {
         const val ACTIVATE_PROCESS = 0
         const val ACTIVATE_SUCCESS = 1
 
+        const val MAX_AUTO_RETRIES = 10
+        private const val FIRST_RETRY_GRACE_MS = 3_000L
+        private const val MAX_BACKOFF_MS = 30_000L
     }
 
     var activateStatus by mutableStateOf<ActivateStatus>(run {
@@ -94,6 +102,48 @@ class ActivateViewModel : ViewModel() {
     fun setTryToActivate(activate: Boolean) {
         viewModelScope.launch(Dispatchers.Main) {
             tryActivate = activate
+        }
+    }
+
+    // ---- Auto-restart saat server mati tak terduga (port dari Axora, disesuaikan ke API main) ----
+    private var autoRestartJob: Job? = null
+    private var retryCount = 0
+
+    @Volatile
+    private var intentionalStop = false
+
+    /** Dipanggil sebelum user mematikan server: tidak boleh ada auto-restart & health check. */
+    fun markIntentionalStop() {
+        intentionalStop = true
+        ServerGuard.wasRunning = false
+        ServerHealthScheduler.cancel(axeronApp)
+        autoRestartJob?.cancel()
+    }
+
+    /** Dipanggil sebelum user me-restart server: tahan auto-restart, tapi health check tetap hidup. */
+    fun markIntentionalRestart() {
+        intentionalStop = true
+        autoRestartJob?.cancel()
+    }
+
+    private fun launchAutoRestart() {
+        if (autoRestartJob?.isActive == true) return
+        autoRestartJob = viewModelScope.launch(Dispatchers.IO) {
+            var skipped = 0
+            while (retryCount < MAX_AUTO_RETRIES && !intentionalStop) {
+                // Percobaan pertama diberi jeda lebih panjang: pada cold start, binder dari server
+                // yang masih sehat bisa tiba sedikit terlambat dan tidak boleh dianggap "mati".
+                val wait = if (retryCount == 0) FIRST_RETRY_GRACE_MS
+                else minOf(1000L shl retryCount, MAX_BACKOFF_MS)
+                delay(wait)
+
+                if (intentionalStop || Axeron.pingBinder()) break
+                if (tryActivate && skipped++ < 20) continue // aktivasi manual sedang berjalan
+
+                retryCount++
+                Log.i(TAG, "Auto-restart attempt $retryCount/$MAX_AUTO_RETRIES")
+                ServerGuard.restart(axeronApp)
+            }
         }
     }
 
@@ -176,6 +226,11 @@ class ActivateViewModel : ViewModel() {
                     status is ActivateStatus.Disable && activateStatus is ActivateStatus.Updating
                 axeronInfo = when (status) {
                     is ActivateStatus.Running -> {
+                        ServerGuard.wasRunning = true
+                        intentionalStop = false
+                        retryCount = 0
+                        autoRestartJob?.cancel()
+                        ServerHealthScheduler.schedule(axeronApp)
                         checkShizukuIntercept()
                         status.axeronInfo
                     }
@@ -196,11 +251,20 @@ class ActivateViewModel : ViewModel() {
                 Log.i("AxManagerBinder", "status: $status")
                 activateStatus = status
                 setTryToActivate(false)
+
+                if (status is ActivateStatus.Disable &&
+                    ServerGuard.wasRunning &&
+                    !intentionalStop &&
+                    ServerGuard.autoRestartEnabled
+                ) {
+                    launchAutoRestart()
+                }
             }
         }
     }
 
     suspend fun startRoot(): Int = withContext(Dispatchers.IO) {
+        intentionalStop = false
         runCatching {
             if (tryActivate) return@withContext ACTIVATE_PROCESS
             setTryToActivate(true)
@@ -236,6 +300,7 @@ class ActivateViewModel : ViewModel() {
     suspend fun startAdbWireless(
         context: Context
     ): AdbStateInfo = withContext(Dispatchers.IO) {
+        intentionalStop = false
         if (AdbEnvironment.isWifiRequired() && !isWifiEnabled(context)) {
             requestEnableWifi(context)
             return@withContext AdbStateInfo.Failed("WiFi is required")
@@ -262,6 +327,7 @@ class ActivateViewModel : ViewModel() {
     suspend fun startAdbTcp(
         context: Context
     ): AdbStateInfo = withContext(Dispatchers.IO) {
+        intentionalStop = false
         if (tryActivate) return@withContext AdbStateInfo.Process("Trying to activate")
         setTryToActivate(true)
         resetStatus()

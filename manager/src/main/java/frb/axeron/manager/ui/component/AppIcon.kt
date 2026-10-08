@@ -22,7 +22,7 @@ fun AppIcon(
         ImageRequest.Builder(context)
             .data(packageInfo)
             .size(sizePx)
-            .crossfade(false)
+            .crossfade(true)
             .build()
     }
     AsyncImage(

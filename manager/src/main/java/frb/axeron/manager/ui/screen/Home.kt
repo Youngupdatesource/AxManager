@@ -157,8 +157,12 @@ fun HomeScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelGloba
                                     }
                                 }
                             },
-                            onShutdown = { Axeron.destroy() },
+                            onShutdown = {
+                                activateViewModel.markIntentionalStop()
+                                Axeron.destroy()
+                            },
                             onRestart = {
+                                activateViewModel.markIntentionalRestart()
                                 Axeron.newProcess(
                                     AxeronCommandSession.getQuickCmd(
                                         Starter.internalCommand,

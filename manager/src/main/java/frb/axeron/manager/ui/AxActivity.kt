@@ -13,9 +13,11 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -46,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -216,6 +219,11 @@ class AxActivity : ComponentActivity() {
             )
         }
 
+        val bottomBarRoutes = remember {
+            BottomBarDestination.entries.map { it.direction.route }.toSet()
+        }
+        val navTransitions = remember(bottomBarRoutes) { createNavTransitions(bottomBarRoutes) }
+
         val showBottomBar = when (currentDestination?.route) {
             ActivateScreenDestination.route -> false // Hide for Activate
             FlashScreenDestination.route -> false // Hide for Flash
@@ -239,13 +247,7 @@ class AxActivity : ComponentActivity() {
                         dependenciesContainerBuilder = {
                             dependency(viewModelGlobal)
                         },
-                        defaultTransitions = object : NavHostAnimatedDestinationStyle() {
-                            override val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition
-                                get() = { fadeIn(animationSpec = tween(durationMillis = 160, delayMillis = 60)) }
-
-                            override val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition
-                                get() = { fadeOut(animationSpec = tween(durationMillis = 90)) }
-                        }
+                        defaultTransitions = navTransitions
                     )
                 }
             }
@@ -262,6 +264,71 @@ class AxActivity : ComponentActivity() {
                     activateViewModel.axeronInfo,
                     pluginViewModel.pluginUpdateCount
                 )
+            }
+        }
+    }
+
+    /**
+     * Transisi navigasi ala Axora:
+     * - pindah antar tab bottom bar: slide horizontal (spring) searah indeks tab
+     * - masuk sub-screen: slide dari kanan; kembali: scale-out + fade
+     */
+    private fun createNavTransitions(bottomBarRoutes: Set<String>): NavHostAnimatedDestinationStyle {
+        fun tabIndex(route: String?): Int =
+            BottomBarDestination.entries.indexOfFirst { it.direction.route == route }
+
+        return object : NavHostAnimatedDestinationStyle() {
+            override val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+                val targetRoute = targetState.destination.route
+                if (targetRoute !in bottomBarRoutes) {
+                    slideInHorizontally(initialOffsetX = { it })
+                } else {
+                    val from = tabIndex(initialState.destination.route)
+                    val to = tabIndex(targetRoute)
+                    if (from != -1 && to != -1) {
+                        val spec = spring<IntOffset>(dampingRatio = 0.8f, stiffness = 300f)
+                        if (to > from) slideInHorizontally(spec) { width -> width }
+                        else slideInHorizontally(spec) { width -> -width }
+                    } else {
+                        fadeIn(animationSpec = tween(340))
+                    }
+                }
+            }
+
+            override val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+                val initialRoute = initialState.destination.route
+                val targetRoute = targetState.destination.route
+                if (initialRoute in bottomBarRoutes && targetRoute !in bottomBarRoutes) {
+                    slideOutHorizontally(targetOffsetX = { -it / 4 }) + fadeOut()
+                } else if (initialRoute in bottomBarRoutes && targetRoute in bottomBarRoutes) {
+                    val from = tabIndex(initialRoute)
+                    val to = tabIndex(targetRoute)
+                    if (from != -1 && to != -1) {
+                        val spec = spring<IntOffset>(dampingRatio = 0.8f, stiffness = 300f)
+                        if (to > from) slideOutHorizontally(spec) { width -> -width }
+                        else slideOutHorizontally(spec) { width -> width }
+                    } else {
+                        fadeOut(animationSpec = tween(340))
+                    }
+                } else {
+                    fadeOut(animationSpec = tween(340))
+                }
+            }
+
+            override val popEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+                if (targetState.destination.route in bottomBarRoutes) {
+                    slideInHorizontally(initialOffsetX = { -it / 4 }) + fadeIn()
+                } else {
+                    fadeIn(animationSpec = tween(340))
+                }
+            }
+
+            override val popExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+                if (initialState.destination.route !in bottomBarRoutes) {
+                    scaleOut(targetScale = 0.9f) + fadeOut()
+                } else {
+                    fadeOut(animationSpec = tween(340))
+                }
             }
         }
     }
