@@ -76,6 +76,7 @@ dependencies {
 
     implementation(libs.compose.coil)
     implementation(libs.appiconloader.coil)
+    implementation(libs.appiconloader)
 
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.core.ktx)
