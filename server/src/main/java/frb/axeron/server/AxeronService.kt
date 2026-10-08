@@ -75,7 +75,8 @@ open class AxeronService :
     Service<AxeronUserServiceManager, AxeronClientManager, AxeronConfigManager>() {
 
     companion object {
-        private const val STARTUP_LEASE_MS = 30_000L
+        private const val STARTUP_LEASE_MS = 60_000L
+        private const val CLIENT_ACTIVITY_TTL_MS = 60_000L
         private const val MANAGER_LOOKUP_ATTEMPTS = 4
         private const val MANAGER_LOOKUP_DELAY_MS = 750L
 
@@ -336,11 +337,17 @@ open class AxeronService :
         )
 
 
-    private val ecoWakeLockMarker =
+    private val wakeLockModeFile =
         File(
             PathHelper.getWorkingPath(isRoot, AxeronApiConstant.folder.PARENT),
-            "ax_eco_wakelock"
+            "ax_wakelock_mode"
         )
+
+    private val wakeLockAlways: Boolean = try {
+        wakeLockModeFile.exists() && wakeLockModeFile.readText().trim().equals("always", true)
+    } catch (e: Exception) {
+        false
+    }
 
     init {
 
@@ -372,12 +379,12 @@ open class AxeronService :
             sendBinderToManager()
         }
 
-        if (ecoWakeLockMarker.exists()) {
-            wakeLock.acquire("startup", STARTUP_LEASE_MS)
-            LOGGER.i("wakelock mode eco, marker=${ecoWakeLockMarker.path}")
-        } else {
+        if (wakeLockAlways) {
             wakeLock.acquire("keepalive", WakeLockController.NO_TIMEOUT)
-            LOGGER.i("wakelock mode keepalive, create ${ecoWakeLockMarker.path} to enable eco mode")
+            LOGGER.i("wakelock mode always, file=${wakeLockModeFile.path}")
+        } else {
+            wakeLock.acquire("startup", STARTUP_LEASE_MS)
+            LOGGER.i("wakelock mode adaptive, write always to ${wakeLockModeFile.path} for a permanent lock")
         }
     }
 
@@ -813,6 +820,9 @@ open class AxeronService :
 
 
     override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
+        if (!wakeLockAlways && code in IBinder.FIRST_CALL_TRANSACTION..IBinder.LAST_CALL_TRANSACTION) {
+            wakeLock.touch("client", CLIENT_ACTIVITY_TTL_MS)
+        }
         if (code == ServerConstants.BINDER_TRANSACTION_getApplications) {
             data.enforceInterface(BINDER_DESCRIPTOR)
             val userId = data.readInt()

@@ -36,6 +36,7 @@ class WakeLockController(
         private const val RETRY_BASE_MS = 1_000L
         private const val RETRY_MAX_MS = 30_000L
         private const val SHUTDOWN_WAIT_MS = 1_000L
+        private const val TOUCH_COALESCE_MS = 1_000L
     }
 
     class Lease internal constructor(
@@ -72,6 +73,10 @@ class WakeLockController(
     }
 
     private val leases = LinkedHashMap<Long, Lease>()
+    private val sliding = HashMap<String, Lease>()
+
+    @Volatile
+    private var lastTouchAt = 0L
     private var held = false
     private var stopped = false
     private var backoffMs = RETRY_BASE_MS
@@ -85,6 +90,13 @@ class WakeLockController(
             lease.markClosed()
         }
         return lease
+    }
+
+    fun touch(key: String, ttlMs: Long) {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastTouchAt < TOUCH_COALESCE_MS) return
+        lastTouchAt = now
+        post { renew(key, ttlMs) }
     }
 
     fun bind(lease: Lease, process: Process) {
@@ -110,6 +122,7 @@ class WakeLockController(
                 handler.removeCallbacksAndMessages(null)
                 leases.values.forEach { it.markClosed() }
                 leases.clear()
+                sliding.clear()
                 if (held) {
                     nativeRelease()
                 }
@@ -132,6 +145,21 @@ class WakeLockController(
         } catch (t: Throwable) {
             LOGGER.e("wakelock task failed", t)
         }
+    }
+
+    private fun renew(key: String, ttlMs: Long) {
+        if (stopped) return
+        val existing = sliding[key]
+        if (existing != null && !existing.isClosed && leases.containsKey(existing.id)) {
+            existing.expiry?.let { handler.removeCallbacks(it) }
+            val expiry = task { expire(existing) }
+            existing.expiry = expiry
+            handler.postDelayed(expiry, ttlMs)
+            return
+        }
+        val lease = Lease(ids.incrementAndGet(), "touch:$key", ttlMs.coerceAtLeast(1L), this)
+        sliding[key] = lease
+        onOpen(lease)
     }
 
     private fun onOpen(lease: Lease) {
