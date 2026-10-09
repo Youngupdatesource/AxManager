@@ -48,7 +48,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -85,7 +87,8 @@ import frb.axeron.api.core.Starter
 import frb.axeron.manager.BuildConfig
 import frb.axeron.manager.R
 import frb.axeron.manager.ui.component.ExtraLabel
-import frb.axeron.manager.ui.component.HomeBanner
+import frb.axeron.manager.ui.component.StatusBannerImage
+import frb.axeron.manager.ui.component.rememberStatusBannerFile
 import frb.axeron.manager.ui.component.ExtraLabelDefaults
 import frb.axeron.manager.ui.component.PluginCard
 import frb.axeron.manager.ui.component.PowerDialog
@@ -216,7 +219,6 @@ fun HomeScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelGloba
                 .padding(bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            HomeBanner()
             StatusCard(
                 activateViewModel = activateViewModel
             ) {
@@ -484,32 +486,61 @@ fun StatusCard(
                 }
 
                 isRunning -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .offset(10.dp, 30.dp),
-                        contentAlignment = Alignment.BottomEnd
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(145.dp),
-                            painter = painterResource(R.drawable.ic_axeron),
-                            contentDescription = null
+                    val bannerFile = rememberStatusBannerFile()
+
+                    if (bannerFile != null) {
+                        // Penentu tinggi kartu: tanpa ikon 145dp, banner (matchParentSize) tidak punya ukuran sendiri.
+                        Spacer(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
                         )
+                        StatusBannerImage(
+                            file = bannerFile,
+                            modifier = Modifier.matchParentSize()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .offset(10.dp, 30.dp),
+                            contentAlignment = Alignment.BottomEnd
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(145.dp),
+                                painter = painterResource(R.drawable.ic_axeron),
+                                contentDescription = null
+                            )
+                        }
                     }
                     Box(
                         modifier = Modifier
                             .matchParentSize()
                             .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        fadeColor.copy(alpha = 0.0f),
-                                        fadeColor.copy(alpha = 0.55f)
-                                    ),
-                                    startY = 0f,
-                                    endY = Float.POSITIVE_INFINITY
-                                )
+                                if (bannerFile != null) {
+                                    // Scrim lebih gelap agar teks tetap terbaca di atas gambar/GIF apa pun.
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Black.copy(alpha = 0.25f),
+                                            Color.Black.copy(alpha = 0.65f)
+                                        )
+                                    )
+                                } else {
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            fadeColor.copy(alpha = 0.0f),
+                                            fadeColor.copy(alpha = 0.55f)
+                                        ),
+                                        startY = 0f,
+                                        endY = Float.POSITIVE_INFINITY
+                                    )
+                                }
                             )
                     )
+                    CompositionLocalProvider(
+                        LocalContentColor provides
+                                if (bannerFile != null) Color.White else LocalContentColor.current
+                    ) {
                     Column(
                         modifier = Modifier
                             .matchParentSize()
@@ -572,9 +603,11 @@ fun StatusCard(
                         Text(
                             text = formatUptime(time),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (bannerFile != null) Color.White.copy(alpha = 0.85f)
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontFamily = FontFamily.Monospace
                         )
+                    }
                     }
                 }
 

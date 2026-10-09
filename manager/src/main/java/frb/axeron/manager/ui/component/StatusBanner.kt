@@ -6,41 +6,35 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import frb.axeron.manager.R
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +43,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Penyimpanan banner Home. File disalin sekali ke filesDir (tidak bergantung pada Uri picker),
+ * Penyimpanan banner kartu status Home. File disalin sekali ke filesDir (tidak bergantung pada Uri picker),
  * ukurannya dibatasi, dan divalidasi bisa didekode sebelum dipakai.
  */
 object BannerStore {
@@ -119,13 +113,56 @@ object BannerStore {
     }
 }
 
+/** File banner kustom bila ada; dihitung ulang setiap banner diganti atau dihapus. */
 @Composable
-fun HomeBanner(modifier: Modifier = Modifier) {
+fun rememberStatusBannerFile(): File? {
+    val context = LocalContext.current
+    val version = BannerStore.version
+    return remember(version) { BannerStore.file(context).takeIf { it.exists() } }
+}
+
+/**
+ * Menggambar banner (gambar/GIF) mengisi parent.
+ *
+ * - Digambar lewat Modifier.paint(sizeToIntrinsics = false) supaya ukuran gambar tidak ikut
+ *   menentukan tinggi kartu (StatusCard memakai IntrinsicSize.Min).
+ * - Ukuran request = ukuran area gambar, jadi gambar/GIF didekode di ukuran tampil, bukan ukuran asli.
+ * - GIF hanya dianimasikan saat Activity STARTED; selain itu painter dilepas dari komposisi
+ *   sehingga animasi berhenti dan tidak menghabiskan baterai di background.
+ */
+@Composable
+fun StatusBannerImage(file: File, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val version = BannerStore.version
+    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
+    val visible = lifecycleState.isAtLeast(Lifecycle.State.STARTED)
+    var areaSize by remember { mutableStateOf(IntSize.Zero) }
+
+    Box(modifier = modifier.onSizeChanged { areaSize = it }) {
+        if (visible && areaSize.width > 0 && areaSize.height > 0) {
+            val painter = rememberAsyncImagePainter(
+                model = ImageRequest.Builder(context)
+                    .data(file)
+                    .memoryCacheKey("status_banner:$version:${areaSize.width}x${areaSize.height}")
+                    .size(areaSize.width, areaSize.height)
+                    .build(),
+                contentScale = ContentScale.Crop
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .paint(painter, sizeToIntrinsics = false, contentScale = ContentScale.Crop)
+            )
+        }
+    }
+}
+
+/** Item pengaturan banner untuk layar Appearance. */
+@Composable
+fun BannerSettingItems() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-    val version = BannerStore.version
-    val bannerFile = remember(version) { BannerStore.file(context).takeIf { it.exists() } }
+    val file = rememberStatusBannerFile()
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -139,83 +176,29 @@ fun HomeBanner(modifier: Modifier = Modifier) {
         }
     }
 
-    // GIF hanya dianimasikan saat layar benar-benar tampil: begitu Activity tidak STARTED,
-    // image dilepas dari komposisi sehingga animasi berhenti dan tidak menghabiskan baterai.
-    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
-    val visible = lifecycleState.isAtLeast(Lifecycle.State.STARTED)
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(if (bannerFile != null) 150.dp else 72.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        ),
-        elevation = CardDefaults.cardElevation(0.dp)
-    ) {
-        if (bannerFile != null) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (visible) {
-                    // Ukuran request = ukuran composable, jadi gambar/GIF didekode di ukuran tampil,
-                    // bukan ukuran aslinya.
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(bannerFile)
-                            .memoryCacheKey("home_banner:$version")
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilledTonalIconButton(onClick = { picker.launch("image/*") }) {
-                        Icon(
-                            imageVector = Icons.Filled.Image,
-                            contentDescription = stringResource(R.string.home_banner_change)
-                        )
-                    }
-                    FilledTonalIconButton(onClick = { BannerStore.clear(context) }) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = stringResource(R.string.home_banner_remove)
-                        )
-                    }
-                }
-            }
-        } else {
-            Card(
-                onClick = { picker.launch("image/*") },
-                modifier = Modifier.fillMaxSize(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-                elevation = CardDefaults.cardElevation(0.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Image,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = stringResource(R.string.home_banner_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+    SettingsItem(
+        iconVector = Icons.Filled.Image,
+        label = stringResource(R.string.status_banner),
+        description = stringResource(R.string.status_banner_desc),
+        onClick = { picker.launch("image/*") }
+    ) { _, _ ->
+        if (file != null) {
+            StatusBannerImage(
+                file = file,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+                    .height(96.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            )
         }
+    }
+
+    if (file != null) {
+        SettingsItem(
+            iconVector = Icons.Filled.Delete,
+            label = stringResource(R.string.home_banner_remove),
+            onClick = { BannerStore.clear(context) }
+        )
     }
 }

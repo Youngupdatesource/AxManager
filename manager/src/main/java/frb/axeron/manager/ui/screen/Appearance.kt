@@ -60,6 +60,7 @@ import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import frb.axeron.api.core.AxeronSettings
 import frb.axeron.manager.R
+import frb.axeron.manager.ui.component.BannerSettingItems
 import frb.axeron.manager.ui.component.PaletteDialog
 import frb.axeron.manager.ui.component.SettingsItem
 import frb.axeron.manager.ui.component.rememberCustomDialog
@@ -349,6 +350,8 @@ fun AppearanceScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewMode
                     )
                 }
             }
+
+            BannerSettingItems()
         }
 
         if (showColorPicker) {

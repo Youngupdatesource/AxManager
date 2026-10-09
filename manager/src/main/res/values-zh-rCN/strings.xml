@@ -208,8 +208,8 @@
     <string name="permission_dont_allow">拒绝</string>
     <string name="permission_dont_allow_countdown">拒绝 (%d秒)</string>
     <string name="uid_value">进程ID: %d</string>
-    <string name="home_banner_hint">点按设置横幅（JPG、PNG、WebP、GIF）</string>
-    <string name="home_banner_change">更换横幅</string>
+    <string name="status_banner">状态卡横幅</string>
+    <string name="status_banner_desc">为“运行中”卡片选择 JPG、PNG、WebP 或 GIF 图片（最大 8 MB）</string>
     <string name="home_banner_remove">移除横幅</string>
     <string name="home_banner_too_large">文件过大（最大 8 MB）</string>
     <string name="home_banner_failed">无法加载该图片</string>
