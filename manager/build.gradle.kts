@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.colorpicker.compose)
 
     implementation(libs.compose.coil)
+    implementation(libs.compose.coil.gif)
     implementation(libs.appiconloader.coil)
     implementation(libs.appiconloader)
 

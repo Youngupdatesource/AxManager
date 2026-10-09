@@ -6,6 +6,8 @@ import android.content.Context
 import android.os.Build
 import coil.Coil
 import coil.ImageLoader
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
 import coil.memory.MemoryCache
 import com.topjohnwu.superuser.Shell
 import frb.axeron.Axerish
@@ -59,6 +61,10 @@ class AxeronApplication : Engine() {
                 .components {
                     add(AppIconKeyer())
                     add(ThrottledAppIconFetcher.Factory(iconSize, context))
+                    // ImageDecoder (API 28+) mendekode frame GIF/WebP animasi langsung di ukuran target
+                    // dan hemat memori; GifDecoder hanya untuk API 26-27.
+                    if (Build.VERSION.SDK_INT >= 28) add(ImageDecoderDecoder.Factory())
+                    else add(GifDecoder.Factory())
                 }
                 .memoryCache {
                     MemoryCache.Builder(context)

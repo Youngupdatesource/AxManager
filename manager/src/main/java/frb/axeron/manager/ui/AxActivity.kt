@@ -45,7 +45,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
@@ -224,6 +226,10 @@ class AxActivity : ComponentActivity() {
         }
         val navTransitions = remember(bottomBarRoutes) { createNavTransitions(bottomBarRoutes) }
 
+        // Urutan tab yang sedang tampil di bottom bar (tab needAxeron disembunyikan saat server mati).
+        val swipeTabs = BottomBarDestination.entries.filter { axeronInfo.isRunning() || !it.needAxeron }
+        val currentTabIndex = swipeTabs.indexOfFirst { it.direction.route == currentDestination?.route }
+
         val showBottomBar = when (currentDestination?.route) {
             ActivateScreenDestination.route -> false // Hide for Activate
             FlashScreenDestination.route -> false // Hide for Flash
@@ -241,7 +247,34 @@ class AxActivity : ComponentActivity() {
                     DestinationsNavHost(
                         modifier = Modifier
                             .padding(innerPadding)
-                            .padding(bottom = if (showBottomBar) 80.dp else 0.dp),
+                            .padding(bottom = if (showBottomBar) 80.dp else 0.dp)
+                            // Geser kiri/kanan = pindah ke tab sebelah. Dipasang di parent, jadi
+                            // komponen anak yang sudah memakai drag horizontal (slider, dll) tetap menang.
+                            .pointerInput(showBottomBar, currentTabIndex, swipeTabs) {
+                                if (!showBottomBar || currentTabIndex < 0) return@pointerInput
+                                val threshold = 72.dp.toPx()
+                                var total = 0f
+                                detectHorizontalDragGestures(
+                                    onDragStart = { total = 0f },
+                                    onDragCancel = { total = 0f },
+                                    onDragEnd = {
+                                        val target = when {
+                                            total <= -threshold -> swipeTabs.getOrNull(currentTabIndex + 1)
+                                            total >= threshold -> swipeTabs.getOrNull(currentTabIndex - 1)
+                                            else -> null
+                                        }
+                                        total = 0f
+                                        target?.let {
+                                            navigator.navigate(it.direction) {
+                                                popUpTo(NavGraphs.root) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    },
+                                    onHorizontalDrag = { _, dragAmount -> total += dragAmount }
+                                )
+                            },
                         navGraph = NavGraphs.root,
                         navController = navController,
                         dependenciesContainerBuilder = {

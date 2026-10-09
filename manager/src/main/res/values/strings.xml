@@ -208,4 +208,9 @@
     <string name="permission_dont_allow">Don\'t Allow</string>
     <string name="permission_dont_allow_countdown">Don\'t Allow (%ds)</string>
     <string name="uid_value">UID: %d</string>
+    <string name="home_banner_hint">Tap to set a banner (JPG, PNG, WebP, GIF)</string>
+    <string name="home_banner_change">Change banner</string>
+    <string name="home_banner_remove">Remove banner</string>
+    <string name="home_banner_too_large">File is too large (max 8 MB)</string>
+    <string name="home_banner_failed">Couldn\'t load that image</string>
 </resources>

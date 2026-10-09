@@ -208,4 +208,9 @@
     <string name="permission_dont_allow">Jangan Izinkan</string>
     <string name="permission_dont_allow_countdown">Jangan Izinkan (%ds)</string>
     <string name="uid_value">UID: %d</string>
+    <string name="home_banner_hint">Ketuk untuk memasang banner (JPG, PNG, WebP, GIF)</string>
+    <string name="home_banner_change">Ganti banner</string>
+    <string name="home_banner_remove">Hapus banner</string>
+    <string name="home_banner_too_large">Ukuran file terlalu besar (maks 8 MB)</string>
+    <string name="home_banner_failed">Gambar tidak bisa dimuat</string>
 </resources>

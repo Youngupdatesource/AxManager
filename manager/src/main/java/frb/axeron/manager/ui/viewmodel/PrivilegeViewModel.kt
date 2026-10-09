@@ -13,6 +13,9 @@ import androidx.lifecycle.viewModelScope
 import frb.axeron.api.Axeron
 import frb.axeron.manager.ui.util.HanziToPinyin
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -98,19 +101,40 @@ class PrivilegeViewModel(application: Application) : AndroidViewModel(applicatio
             isRefreshing = refresh
             val pm = application.packageManager
 
+            val selfUid = android.os.Process.myUid()
+
             val result = withContext(Dispatchers.IO) {
-                val packages = getApplications()
+                // Sebelumnya semua paket (termasuk ratusan app sistem) di-loadLabel dan di-IPC ke daemon
+                // satu per satu, lalu baru dibuang oleh filter di UI. Buang dulu di sini.
+                val packages = getApplications().filter {
+                    val info = it.applicationInfo ?: return@filter false
+                    (info.flags and ApplicationInfo.FLAG_SYSTEM) == 0 && info.uid != selfUid
+                }
 
-                // Gunakan chunked atau parallel map untuk mempercepat loadLabel
-                packages.associate { packageInfo ->
-                    val appInfo = packageInfo.applicationInfo!!
-                    val uid = appInfo.uid
-                    val label = appInfo.loadLabel(pm).toString()
+                // loadLabel + getFlagsForUid (Binder) dibagi ke beberapa worker.
+                val workers = Runtime.getRuntime().availableProcessors().coerceIn(2, 4)
+                val chunkSize = ((packages.size + workers - 1) / workers).coerceAtLeast(1)
+                val loaded = coroutineScope {
+                    packages.chunked(chunkSize).map { chunk ->
+                        async {
+                            chunk.map { packageInfo ->
+                                val appInfo = packageInfo.applicationInfo!!
+                                Triple(
+                                    packageInfo,
+                                    appInfo.loadLabel(pm).toString(),
+                                    granted(appInfo.uid)
+                                )
+                            }
+                        }
+                    }.awaitAll().flatten()
+                }
 
-                    uid to AppsViewModel.AppInfo(
+                // Pinyin tetap berurutan (HanziToPinyin singleton, thread-safety tidak dijamin).
+                loaded.associate { (packageInfo, label, isGranted) ->
+                    packageInfo.applicationInfo!!.uid to AppsViewModel.AppInfo(
                         label = label,
                         packageInfo = packageInfo,
-                        isAdded = granted(uid),
+                        isAdded = isGranted,
                         pinyin = appSearchPinyin(label)
                     )
                 }

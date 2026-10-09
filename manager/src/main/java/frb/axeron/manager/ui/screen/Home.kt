@@ -85,6 +85,7 @@ import frb.axeron.api.core.Starter
 import frb.axeron.manager.BuildConfig
 import frb.axeron.manager.R
 import frb.axeron.manager.ui.component.ExtraLabel
+import frb.axeron.manager.ui.component.HomeBanner
 import frb.axeron.manager.ui.component.ExtraLabelDefaults
 import frb.axeron.manager.ui.component.PluginCard
 import frb.axeron.manager.ui.component.PowerDialog
@@ -215,6 +216,7 @@ fun HomeScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelGloba
                 .padding(bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            HomeBanner()
             StatusCard(
                 activateViewModel = activateViewModel
             ) {
