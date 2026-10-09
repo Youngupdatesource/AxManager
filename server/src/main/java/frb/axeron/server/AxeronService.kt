@@ -343,10 +343,22 @@ open class AxeronService :
             "ax_wakelock_mode"
         )
 
-    private val wakeLockAlways: Boolean = try {
-        wakeLockModeFile.exists() && wakeLockModeFile.readText().trim().equals("always", true)
+    private enum class WakeLockMode { NEVER, ADAPTIVE, ALWAYS }
+
+    // Default NEVER: daemon tidak menahan wakelock sama sekali supaya device bisa masuk idle/deep sleep.
+    // Isi file ax_wakelock_mode: "adaptive" (lease saat ada client/proses) atau "always" (permanen).
+    private val wakeLockMode: WakeLockMode = try {
+        if (wakeLockModeFile.exists()) {
+            when (wakeLockModeFile.readText().trim().lowercase()) {
+                "always" -> WakeLockMode.ALWAYS
+                "adaptive" -> WakeLockMode.ADAPTIVE
+                else -> WakeLockMode.NEVER
+            }
+        } else {
+            WakeLockMode.NEVER
+        }
     } catch (e: Exception) {
-        false
+        WakeLockMode.NEVER
     }
 
     init {
@@ -379,13 +391,22 @@ open class AxeronService :
             sendBinderToManager()
         }
 
-        if (wakeLockAlways) {
-            wakeLock.acquire("keepalive", WakeLockController.NO_TIMEOUT)
-            LOGGER.i("wakelock mode always, file=${wakeLockModeFile.path}")
-        } else {
-            wakeLock.acquire("startup", STARTUP_LEASE_MS)
-            LOGGER.i("wakelock mode adaptive, write always to ${wakeLockModeFile.path} for a permanent lock")
+        when (wakeLockMode) {
+            WakeLockMode.ALWAYS -> {
+                wakeLock.acquire("keepalive", WakeLockController.NO_TIMEOUT)
+                LOGGER.i("wakelock mode always, file=${wakeLockModeFile.path}")
+            }
+
+            WakeLockMode.ADAPTIVE -> {
+                wakeLock.acquire("startup", STARTUP_LEASE_MS)
+                LOGGER.i("wakelock mode adaptive, file=${wakeLockModeFile.path}")
+            }
+
+            WakeLockMode.NEVER ->
+                LOGGER.i("wakelock mode never (default), write adaptive|always to ${wakeLockModeFile.path} to change")
         }
+
+        DaemonGuard.start(MANAGER_APPLICATION_ID)
     }
 
     fun sendBinderToClient() {
@@ -513,18 +534,19 @@ open class AxeronService :
             cmd.contentToString()
         )
 
-        val lease = wakeLock.acquire("newProcess:uid=${getCallingUid()}")
+        val lease = if (wakeLockMode == WakeLockMode.NEVER) null
+        else wakeLock.acquire("newProcess:uid=${getCallingUid()}")
         val process: Process
         try {
             process = Runtime.getRuntime().exec(cmd, env, if (dir != null) File(dir) else null)
         } catch (e: IOException) {
-            lease.close()
+            lease?.close()
             throw IllegalStateException(e.message)
         } catch (e: Throwable) {
-            lease.close()
+            lease?.close()
             throw e
         }
-        wakeLock.bind(lease, process)
+        if (lease != null) wakeLock.bind(lease, process)
 
         val clientRecord = clientManager.findClient(getCallingUid(), getCallingPid())
         val token = clientRecord?.client?.asBinder()
@@ -820,7 +842,7 @@ open class AxeronService :
 
 
     override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
-        if (!wakeLockAlways && code in IBinder.FIRST_CALL_TRANSACTION..IBinder.LAST_CALL_TRANSACTION) {
+        if (wakeLockMode == WakeLockMode.ADAPTIVE && code in IBinder.FIRST_CALL_TRANSACTION..IBinder.LAST_CALL_TRANSACTION) {
             wakeLock.touch("client", CLIENT_ACTIVITY_TTL_MS)
         }
         if (code == ServerConstants.BINDER_TRANSACTION_getApplications) {
