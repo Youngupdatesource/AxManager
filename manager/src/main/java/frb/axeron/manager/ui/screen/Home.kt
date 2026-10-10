@@ -385,7 +385,9 @@ fun StatusCard(
                         uriHandler.openUri(extraStepUrl)
                         return@clickable
                     }
-                    if (isRunning) {
+                    // Pemicu crash manual (8x tap cepat) hanya untuk menguji CrashActivity di build debug.
+                    // Di release, spam tap pada kartu tidak boleh membuat app crash.
+                    if (isRunning && BuildConfig.DEBUG) {
                         debugClickCount++
                         debugJob?.cancel()
                         debugJob = scope.launch {
