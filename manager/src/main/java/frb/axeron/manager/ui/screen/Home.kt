@@ -1,5 +1,14 @@
 package frb.axeron.manager.ui.screen
 
+import androidx.core.content.pm.PackageInfoCompat
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.DeveloperBoard
+import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Security
 import android.os.Build
 import android.os.SystemClock
 import android.widget.Toast
@@ -728,82 +737,81 @@ fun WarningCard(
 @Composable
 fun InfoCard(activateViewModel: ActivateViewModel) {
     val axeronInfo = activateViewModel.axeronInfo
+    val context = LocalContext.current
 
-    ElevatedCard(
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp
-        ),
+    val appVersion = remember {
+        runCatching {
+            val info = context.packageManager.getPackageInfo(context.packageName, 0)
+            "v${info.versionName} (${PackageInfoCompat.getLongVersionCode(info)})"
+        }.getOrDefault("-")
+    }
+    val kernel = remember { System.getProperty("os.version").orEmpty().ifBlank { "-" } }
+
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(all = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            @Composable
-            fun InfoCardItem(label: String, content: String, icon: Any? = null) {
-                Card {
-                    Row(
-                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (icon != null) {
-                            when (icon) {
-                                is ImageVector -> Icon(
-                                    imageVector = icon,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .padding(end = 22.dp)
-                                        .size(22.dp)
-                                )
-
-                                is Painter -> Icon(
-                                    painter = icon,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .padding(end = 22.dp)
-                                        .size(22.dp)
-                                )
-                            }
-                        }
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.weight(1f))
-                        Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = content,
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.End,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
-            InfoCardItem(
+            InfoRow(
+                icon = Icons.Outlined.Apps,
+                label = stringResource(R.string.app_name),
+                value = appVersion
+            )
+            InfoRow(
+                icon = Icons.Outlined.PhoneAndroid,
+                label = stringResource(R.string.device_info),
+                value = "${Build.MANUFACTURER} ${Build.MODEL}"
+            )
+            InfoRow(
+                icon = Icons.Outlined.DeveloperBoard,
+                label = stringResource(R.string.kernel_version),
+                value = kernel
+            )
+            InfoRow(
+                icon = Icons.Outlined.Android,
                 label = stringResource(R.string.android_version),
-                content = "${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})",
-                icon = Icons.Filled.Android,
+                value = "${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"
             )
-
-            InfoCardItem(
+            InfoRow(
+                icon = Icons.Outlined.Memory,
                 label = stringResource(R.string.abi_supported),
-                content = Build.SUPPORTED_ABIS.joinToString(", "),
-                icon = Icons.Filled.Memory,
+                value = Build.SUPPORTED_ABIS.joinToString(", ")
             )
-
-            InfoCardItem(
+            InfoRow(
+                icon = Icons.Outlined.Security,
                 label = stringResource(R.string.selinux_context),
-                content = axeronInfo.serverInfo.selinuxContext,
-                icon = Icons.Filled.Security,
+                value = axeronInfo.serverInfo.selinuxContext
             )
+        }
+    }
+}
 
+@Composable
+private fun InfoRow(icon: ImageVector, label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(24.dp))
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

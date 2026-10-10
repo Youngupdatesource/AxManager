@@ -213,4 +213,6 @@
     <string name="home_banner_remove">移除横幅</string>
     <string name="home_banner_too_large">文件过大（最大 8 MB）</string>
     <string name="home_banner_failed">无法加载该图片</string>
+    <string name="device_info">设备信息</string>
+    <string name="kernel_version">内核</string>
 </resources>

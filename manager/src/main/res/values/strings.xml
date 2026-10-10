@@ -213,4 +213,6 @@
     <string name="home_banner_remove">Remove banner</string>
     <string name="home_banner_too_large">File is too large (max 8 MB)</string>
     <string name="home_banner_failed">Couldn\'t load that image</string>
+    <string name="device_info">Device Info</string>
+    <string name="kernel_version">Kernel</string>
 </resources>

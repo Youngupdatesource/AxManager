@@ -1,5 +1,12 @@
 package frb.axeron.manager.ui.component
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material3.Card
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -129,73 +136,62 @@ fun PreviewCard() {
 }
 
 @Composable
+private fun StatTile(
+    title: String,
+    count: Int,
+    icon: ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceContainer)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "$count",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
 @Preview
 fun PluginCard(
     modifier: Modifier = Modifier,
     pluginViewModel: PluginViewModel = viewModel(),
 ) {
     val countTotal = pluginViewModel.plugins.size
-    val containerColor = colorScheme.surfaceVariant
-
-    ElevatedCard(
-        colors = CardDefaults.cardColors(),
+    StatTile(
+        title = if (countTotal <= 1) {
+            stringResource(R.string.plugin)
+        } else {
+            stringResource(R.string.plugin_plural)
+        },
+        count = countTotal,
+        icon = Icons.Outlined.Extension,
         modifier = modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Max)
-    ) {
-        Box(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .offset(20.dp, 15.dp),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                Icon(
-                    modifier = Modifier.size(90.dp),
-                    imageVector = Icons.Filled.Extension,
-                    tint = colorScheme.outline,
-                    contentDescription = null
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                containerColor.copy(alpha = 0.0f),
-                                containerColor.copy(alpha = 0.55f)
-                            ),
-                            startY = 0f,
-                            endY = Float.POSITIVE_INFINITY
-                        )
-                    )
-            )
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = if (countTotal <= 1) {
-                        stringResource(R.string.plugin)
-                    } else {
-                        stringResource(R.string.plugin_plural)
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = "$countTotal",
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
-    }
+    )
 }
 
 @Composable
@@ -205,64 +201,14 @@ fun PrivilegeCard(
     privilegeViewModel: PrivilegeViewModel = viewModel(),
 ) {
     val countTotal = privilegeViewModel.privilegedCount
-    val containerColor = colorScheme.surfaceVariant
-    ElevatedCard(
-        colors = CardDefaults.cardColors(),
+    StatTile(
+        title = if (countTotal <= 1) {
+            stringResource(R.string.privilege)
+        } else {
+            stringResource(R.string.privilege_plural)
+        },
+        count = countTotal,
+        icon = Icons.Outlined.AdminPanelSettings,
         modifier = modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Max)
-    ) {
-        Box(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .offset(15.dp, 10.dp),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                Icon(
-                    modifier = Modifier.size(90.dp),
-                    imageVector = Icons.Filled.AdminPanelSettings,
-                    tint = colorScheme.outline,
-                    contentDescription = null
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                containerColor.copy(alpha = 0.0f),
-                                containerColor.copy(alpha = 0.55f)
-                            ),
-                            startY = 0f,
-                            endY = Float.POSITIVE_INFINITY
-                        )
-                    )
-            )
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = if (countTotal <= 1) {
-                        stringResource(R.string.privilege)
-                    } else {
-                        stringResource(R.string.privilege_plural)
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = "$countTotal",
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
-    }
+    )
 }
