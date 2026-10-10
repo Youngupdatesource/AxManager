@@ -7,10 +7,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 
+val PRIMARY = Color(0xFF8AADF4)           // Catppuccin Blue
+val PRIMARY_LIGHT = Color(0xFFB7BDF8)     // Catppuccin Lavender
+val SECONDARY_LIGHT = Color(0xFFA6DA95)   // Catppuccin Green
+
+val PRIMARY_DARK = Color(0xFF7DC4E4)      // Catppuccin Sky
+val SECONDARY_DARK = Color(0xFFF5BDE6)    // Catppuccin Pink
+
 val GREEN = Color(0xFF4CAF50)             // Green
 val RED = Color(0xFFF44336)               // Red
 val YELLOW = Color(0xFFFFEB3B)            // Yellow
 val ORANGE = Color(0xFFFF9800)            // Orange
+
+val AMOLED_BLACK = Color(0xFF000000)
+val DARK_PURPLE = Color(0xFF6E6CB6)
+val DARK_GREY = Color(0xFF363A4F)
 
 fun Color.blend(other: Color, ratio: Float): Color {
     val inv = 1f - ratio
@@ -21,7 +32,6 @@ fun Color.blend(other: Color, ratio: Float): Color {
         alpha = alpha
     )
 }
-
 
 fun Color.saturate(factor: Float): Color {
     val hsl = FloatArray(3)
@@ -45,7 +55,6 @@ fun Color.adjust(
     return Color(ColorUtils.HSLToColor(hsl))
 }
 
-
 fun Color.toHexString(includeAlpha: Boolean = true): String {
     val argb = toArgb()
     return if (includeAlpha) {
@@ -55,23 +64,15 @@ fun Color.toHexString(includeAlpha: Boolean = true): String {
     }
 }
 
+val basePrimaryDefault = PRIMARY
 
-val AMOLED_BLACK: Color = Color(0xFF000000)
-
-val basePrimaryDefault = Color(0xFFFFB487)
-
-//private val baseSecondaryDefault = Color(0xFFDE5900)
-//private val baseTertiaryDefault = Color(0xFFAD6804)
 private val baseError = Color(0xFFFF452C)
-
-// Surface logic → tipikal dark mode M3
-
 
 fun getVortexDarkColorScheme(
     customColor: Color = basePrimaryDefault,
 ): ColorScheme {
     val secondary = customColor.adjust(hueDelta = 20f, satMul = 0.70f)
-    val tertiary  = customColor.adjust(hueDelta = -60f, satMul = 0.70f)
+    val tertiary = customColor.adjust(hueDelta = -60f, satMul = 0.70f)
     val black = customColor.saturate(5f).blend(Color.Black, 0.7f)
     val white = Color.White.blend(black, 0.10f)
     val surfaceBase = Color(0xFF101010).blend(black, 0.08f)
@@ -81,7 +82,6 @@ fun getVortexDarkColorScheme(
 
     return vortexDarkColorScheme(white, black, customColor, secondary, tertiary, surfaceBase, surfaceBright, surfaceDim, pageBackground)
 }
-
 
 private fun vortexDarkColorScheme(
     white: Color,
@@ -94,27 +94,22 @@ private fun vortexDarkColorScheme(
     surfaceDim: Color,
     pageBackground: Color
 ) = darkColorScheme(
-
-    // PRIMARY
     primary = primary,
     onPrimary = black,
     primaryContainer = primary.blend(black, 0.7f),
     onPrimaryContainer = primary.blend(white, 0.85f),
     inversePrimary = primary.blend(white, 0.40f),
 
-    // SECONDARY
     secondary = secondary.blend(white, 0.8f).blend(surfaceBase, 0.2f),
     onSecondary = black,
     secondaryContainer = secondary.blend(white, 0.35f).blend(surfaceBase, 0.7f),
     onSecondaryContainer = white,
 
-    // TERTIARY
     tertiary = tertiary.blend(white, 0.8f).blend(surfaceBase, 0.2f),
     onTertiary = black,
     tertiaryContainer = tertiary.blend(white, 0.35f).blend(surfaceBase, 0.7f),
     onTertiaryContainer = white,
 
-    // BACKGROUND / SURFACE
     background = pageBackground,
     onBackground = white,
     surface = surfaceBase,
@@ -125,20 +120,15 @@ private fun vortexDarkColorScheme(
     inverseSurface = white,
     inverseOnSurface = black,
 
-    // ERROR
     error = baseError,
     onError = white,
     errorContainer = baseError.blend(surfaceBase, 0.4f),
     onErrorContainer = white,
 
-    // OUTLINE
     outline = Color(0xFF909090),
     outlineVariant = Color(0xFF707070),
-
-    // SCRIM
     scrim = Color(0xFF000000),
 
-    // SURFACE MULTI-LAYER (Material 3 elevations)
     surfaceBright = surfaceBright,
     surfaceDim = surfaceDim,
     surfaceContainerLowest = surfaceBase.blend(white, 0.03f),
@@ -147,7 +137,6 @@ private fun vortexDarkColorScheme(
     surfaceContainerHigh = surfaceBase.blend(white, 0.15f),
     surfaceContainerHighest = surfaceBase.blend(white, 0.20f),
 
-    // FIXED TONES (M3 requirement untuk stabil light/dark)
     primaryFixed = primary,
     primaryFixedDim = primary.blend(black, 0.25f),
     onPrimaryFixed = white,
@@ -164,14 +153,13 @@ private fun vortexDarkColorScheme(
     onTertiaryFixedVariant = black.copy(alpha = 0.7f)
 )
 
-
 fun getVortexLightColorScheme(
     customColor: Color = basePrimaryDefault,
 ): ColorScheme {
     val black = customColor.saturate(5f).blend(Color.Black, 0.7f)
     val primary = customColor.blend(black, 0.5f)
     val secondary = customColor.adjust(hueDelta = 20f, satMul = 0.70f)
-    val tertiary  = customColor.adjust(hueDelta = -60f, satMul = 0.70f)
+    val tertiary = customColor.adjust(hueDelta = -60f, satMul = 0.70f)
     val white = primary.blend(Color.White, 0.95f)
     val surfaceBaseLight = Color(0xFFFFFFFF).blend(white, 0.02f)
     val surfaceBrightLight = surfaceBaseLight.blend(Color.Black, 0.10f)
@@ -196,7 +184,6 @@ private fun vortexLightColorScheme(
     onPrimary = white,
     primaryContainer = primary.blend(white, 0.75f),
     onPrimaryContainer = black,
-
     inversePrimary = primary.blend(surfaceBase, 0.40f),
 
     secondary = secondary.blend(black, 0.85f).blend(surfaceBase, 0.4f),
@@ -211,15 +198,11 @@ private fun vortexLightColorScheme(
 
     background = pageBackground,
     onBackground = black,
-
     surface = surfaceBase,
     onSurface = black,
-
     surfaceVariant = surfaceBase.blend(black, 0.4f),
     onSurfaceVariant = black.copy(alpha = 0.75f),
-
     surfaceTint = primary,
-
     inverseSurface = black,
     inverseOnSurface = white,
 
@@ -230,11 +213,8 @@ private fun vortexLightColorScheme(
 
     outline = Color(0xFF7F7F7F),
     outlineVariant = Color(0xFFBDBDBD),
-
-    // SCRIM
     scrim = Color(0xFF000000),
 
-    // SURFACE MULTI-LAYER (Material 3 elevations)
     surfaceBright = surfaceBright,
     surfaceDim = surfaceDim,
     surfaceContainerLowest = surfaceBase,
