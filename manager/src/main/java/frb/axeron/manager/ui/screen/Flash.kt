@@ -403,7 +403,7 @@ fun FlashScreen(
                             baseDir.mkdirs()
                         }
 
-                        val file = File(baseDir, "axm-Next_install_log_${date}.log")
+                        val file = File(baseDir, "AxM-Next_install_log_${date}.log")
 
                         try {
                             val fos = Axeron.newFileService()

@@ -1,4 +1,4 @@
-name: Build axm-Next
+name: Build AxManager
 
 on:
   workflow_dispatch:
@@ -10,14 +10,6 @@ on:
           - Debug
           - Release
         default: Debug
-      publish:
-        description: Publish a GitHub release (requires Release and valid signing secrets)
-        type: boolean
-        default: false
-      tag:
-        description: Release tag used when publishing
-        type: string
-        default: v1.0
 
 concurrency:
   group: build-${{ github.ref }}
@@ -27,15 +19,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    permissions:
-      contents: write
     steps:
-      - name: Validate inputs
-        if: ${{ inputs.publish && inputs.build_type != 'Release' }}
-        run: |
-          echo "::error::publishing requires build_type=Release"
-          exit 1
-
       - name: Checkout
         uses: actions/checkout@v5
         with:
@@ -62,7 +46,6 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          PUBLISH: ${{ inputs.publish }}
         run: |
           KS="$RUNNER_TEMP/release.jks"
           valid=0
@@ -77,17 +60,13 @@ jobs:
             KA="$KEY_ALIAS"
             KP="$KEY_PASSWORD"
           else
-            if [ "$PUBLISH" = "true" ]; then
-              echo "::error::publishing needs valid signing secrets (KEYSTORE_B64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)"
-              exit 1
-            fi
-            echo "::warning::signing secrets are missing or invalid, using a temporary random keystore"
+            echo "::warning::secret signing kosong atau tidak valid, memakai keystore acak sementara"
             rm -f "$KS"
             SP="$(openssl rand -hex 16)"
             KA="ax"
             KP="$SP"
             echo "::add-mask::$SP"
-            keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias "$KA" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SP" -keypass "$KP" -dname "CN=axm-Next"
+            keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias "$KA" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SP" -keypass "$KP" -dname "CN=AxManager"
           fi
           {
             echo "sdk.dir=$ANDROID_HOME"
@@ -105,21 +84,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: axm-next-apk
+          name: axmanager-apk
           path: manager/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 7
-
-      - name: Publish release
-        if: ${{ inputs.publish }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          TAG: ${{ inputs.tag }}
-        run: |
-          apk="$(ls manager/build/outputs/apk/release/*.apk | head -n 1)"
-          sha256sum "$apk" > "$apk.sha256"
-          gh release create "$TAG" "$apk" "$apk.sha256" \
-            --target "$GITHUB_SHA" \
-            --title "axm-Next $TAG" \
-            --notes-file .github/release-notes.md

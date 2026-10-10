@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">axm-Next</string>
+    <string name="app_name">AxM-Next</string>
     <string name="home_running">Berjalan</string>
     <string name="notification_warn_miui">Pengguna MIUI mungkin perlu mengubah gaya notifikasi menjadi \"Android\" dari \"Notifikasi\" - \"Naungan notifikasi\" di pengaturan sistem.</string>
     <string name="notification_warn_miui_2">Jika tidak, Anda mungkin tidak dapat memasukkan kode penyandingan dari notifikasi.</string>
@@ -39,7 +39,7 @@
     <string name="plugin_update_json_empty">Kosong</string>
     <string name="ignite">Ignite</string>
     <string name="what_is_ignite">Apa Itu Ignite?</string>
-    <string name="what_is_ignite_msg"><![CDATA[Ignite adalah metode pengganti reboot di axm-Next, Anda dapat melakukan ignite di Beranda > Reignite]]></string>
+    <string name="what_is_ignite_msg"><![CDATA[Ignite adalah metode pengganti reboot di AxM-Next, Anda dapat melakukan ignite di Beranda > Reignite]]></string>
     <string name="understand">Saya Mengerti</string>
     <string name="re_ignite_now">Re-ignite sekarang</string>
     <string name="install">Instal</string>
@@ -71,14 +71,14 @@
     <string name="connect_tcp_debugging">Hubungkan ke TCP</string>
     <string name="stop_tcp_debugging">Hentikan TCP</string>
     <string name="enable_wireless_debugging">Aktifkan Wireless Debugging</string>
-    <string name="enable_wireless_debugging_msg">Silakan aktifkan \"Wireless debugging\" di \"Opsi pengembang\". \"Wireless debugging\" otomatis dinonaktifkan saat jaringan berubah.\n\nCatatan, jangan menonaktifkan \"Opsi pengembang\" atau \"USB debugging\", jika tidak axm-Next akan terhenti.</string>
+    <string name="enable_wireless_debugging_msg">Silakan aktifkan \"Wireless debugging\" di \"Opsi pengembang\". \"Wireless debugging\" otomatis dinonaktifkan saat jaringan berubah.\n\nCatatan, jangan menonaktifkan \"Opsi pengembang\" atau \"USB debugging\", jika tidak AxM-Next akan terhenti.</string>
     <string name="open_developer_opt">Pengembang</string>
     <string name="step_by_step">Langkah demi Langkah</string>
     <string name="instruction">Instruksi</string>
     <string name="enable_notification">Aktifkan Notifikasi</string>
     <string name="start_pairing">Mulai Penyandingan</string>
     <string name="activate_by_root">Mulai (untuk perangkat root)</string>
-    <string name="activate_by_root_msg"><![CDATA[Selain itu, axm-Next dapat dimulai secara otomatis saat booting. Jika tidak, silakan periksa apakah sistem atau alat pihak ketiga membatasi axm-Next.<br>Anda dapat merujuk ke %s.]]></string>
+    <string name="activate_by_root_msg"><![CDATA[Selain itu, AxM-Next dapat dimulai secara otomatis saat booting. Jika tidak, silakan periksa apakah sistem atau alat pihak ketiga membatasi AxM-Next.<br>Anda dapat merujuk ke %s.]]></string>
     <string name="adb_tcp_not_ready">ADB TCP belum siap pada port %d</string>
     <string name="adb_tcp_stopped">ADB TCP Berhasil Dihentikan</string>
     <string name="failed_to_stop_adb_tcp">Gagal menghentikan ADB TCP</string>
@@ -120,9 +120,9 @@
     <string name="failed">Gagal</string>
     <string name="idle">Siaga</string>
     <string name="support_me">Dukung Saya</string>
-    <string name="support_me_msg">axm-Next sepenuhnya gratis dan open-source. Jika menurut Anda ini berguna, silakan ikuti proyek ini dan pertimbangkan untuk memberikan bintang di GitHub.</string>
-    <string name="learn_more">Pelajari axm-Next</string>
-    <string name="learn_more_msg">Pelajari cara menggunakan axm-Next dan cara membuat plugin</string>
+    <string name="support_me_msg">AxM-Next sepenuhnya gratis dan open-source. Jika menurut Anda ini berguna, silakan ikuti proyek ini dan pertimbangkan untuk memberikan bintang di GitHub.</string>
+    <string name="learn_more">Pelajari AxM-Next</string>
+    <string name="learn_more_msg">Pelajari cara menggunakan AxM-Next dan cara membuat plugin</string>
     <string name="updating">Memperbarui…</string>
     <string name="server_updating_version" formatted="false"><![CDATA[Memperbarui: %d > %d]]></string>
     <string name="version_pid" formatted="false">Versi: %d | Pid: %d</string>
@@ -131,7 +131,7 @@
     <string name="home_need_fix">Perlu langkah tambahan</string>
     <string name="home_need_fix_msg">Klik untuk melihat cara memperbaikinya</string>
     <string name="home_not_running">Perlu Aktivasi</string>
-    <string name="home_not_running_msg">Klik untuk mengaktivasi axm-Next</string>
+    <string name="home_not_running_msg">Klik untuk mengaktivasi AxM-Next</string>
     <string name="home_update">Perlu Re-Aktivasi</string>
     <string name="new_version_available">Versi baru %s tersedia, klik untuk memperbarui.</string>
     <string name="android_version">Versi Android</string>
@@ -144,7 +144,7 @@
     <string name="search_label_apps">Cari Aplikasi</string>
     <string name="quick_shell">QuickShell</string>
     <string name="quick_shell_short">QShell</string>
-    <string name="quick_shell_not_supported">Silakan aktivasi axm-Next terlebih dahulu</string>
+    <string name="quick_shell_not_supported">Silakan aktivasi AxM-Next terlebih dahulu</string>
     <string name="save">Simpan</string>
     <string name="exec">Jalankan</string>
     <string name="send">Kirim</string>
@@ -164,7 +164,7 @@
     <string name="axeron_permission">Cegat AX-Permission</string>
     <string name="axeron_permission_desc">Cegat manajer izin yang dibangun di atas Shizuku-API menggunakan Ax-Environment</string>
     <string name="tcp_mode">Mode TCP</string>
-    <string name="tcp_mode_desc">Memungkinkan axm-Next untuk memulai ulang tanpa Wi-Fi (axm-Next harus pernah dimulai sekali sejak booting)</string>
+    <string name="tcp_mode_desc">Memungkinkan AxM-Next untuk memulai ulang tanpa Wi-Fi (AxM-Next harus pernah dimulai sekali sejak booting)</string>
     <string name="invalid_port">Port harus antara 1024 dan 65535</string>
     <string name="reactive_to_apply">Re-Aktivasi untuk menerapkan perubahan</string>
     <string name="active_on_boot">Aktifkan saat Booting</string>
@@ -173,17 +173,17 @@
     <string name="please_wait">Harap tunggu…</string>
     <string name="view_command_message">`%s`\n\nAda beberapa pertimbangan lain, harap konfirmasi bahwa Anda telah membaca bantuan terlebih dahulu.</string>
     <string name="activate_by_computer">Mulai dengan menghubungkan ke komputer</string>
-    <string name="activate_by_computer_desc">Untuk perangkat tanpa root, Anda perlu menggunakan adb untuk memulai axm-Next (memerlukan koneksi komputer). Proses ini perlu diulangi setiap kali perangkat dimulai ulang.</string>
+    <string name="activate_by_computer_desc">Untuk perangkat tanpa root, Anda perlu menggunakan adb untuk memulai AxM-Next (memerlukan koneksi komputer). Proses ini perlu diulangi setiap kali perangkat dimulai ulang.</string>
     <string name="activate_by_wireless">Mulai melalui Wireless Debugging</string>
-    <string name="activate_by_wireless_desc">Pada Android 11 atau lebih baru, Anda dapat mengaktifkan Wireless debugging dan memulai axm-Next langsung dari perangkat Anda, tanpa terhubung ke komputer.\n\nSilakan lihat panduan langkah demi langkah terlebih dahulu.</string>
+    <string name="activate_by_wireless_desc">Pada Android 11 atau lebih baru, Anda dapat mengaktifkan Wireless debugging dan memulai AxM-Next langsung dari perangkat Anda, tanpa terhubung ke komputer.\n\nSilakan lihat panduan langkah demi langkah terlebih dahulu.</string>
     <string name="view_command">Lihat Perintah</string>
     <string name="share_command">Bagikan Perintah</string>
-    <string name="active_on_boot_desc">Otomatis aktivasi axm-Next saat booting (Root / ADB pada Android 11+ (Eksperimental))</string>
+    <string name="active_on_boot_desc">Otomatis aktivasi AxM-Next saat booting (Root / ADB pada Android 11+ (Eksperimental))</string>
     <string name="ignite_when_relog">Relog untuk Ignite</string>
-    <string name="ignite_when_relog_desc">Saat Anda masuk kembali, axm-Next akan Re-Ignite</string>
-    <string name="reset_path">Reset axm-Next</string>
+    <string name="ignite_when_relog_desc">Saat Anda masuk kembali, AxM-Next akan Re-Ignite</string>
+    <string name="reset_path">Reset AxM-Next</string>
     <string name="reset_path_desc">Tindakan ini akan menonaktifkan dan menghapus semua plugin Anda</string>
-    <string name="ask_reset_path">Reset axm-Next Sekarang?</string>
+    <string name="ask_reset_path">Reset AxM-Next Sekarang?</string>
     <string name="ask_reset_path_desc">Tindakan ini akan menonaktifkan dan menghapus semua plugin Anda\n\ndi %s</string>
     <string name="reset">Reset</string>
     <string name="settings_editor">Editor Pengaturan</string>

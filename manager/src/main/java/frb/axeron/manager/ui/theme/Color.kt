@@ -75,10 +75,11 @@ fun getVortexDarkColorScheme(
     val black = customColor.saturate(5f).blend(Color.Black, 0.7f)
     val white = Color.White.blend(black, 0.10f)
     val surfaceBase = Color(0xFF101010).blend(black, 0.08f)
+    val pageBackground = surfaceBase.blend(Color.Black, 0.40f)
     val surfaceBright = surfaceBase.blend(Color.White, 0.10f)
     val surfaceDim = surfaceBase.blend(Color.Black, 0.10f)
 
-    return vortexDarkColorScheme(white, black, customColor, secondary, tertiary, surfaceBase, surfaceBright, surfaceDim)
+    return vortexDarkColorScheme(white, black, customColor, secondary, tertiary, surfaceBase, surfaceBright, surfaceDim, pageBackground)
 }
 
 
@@ -90,7 +91,8 @@ private fun vortexDarkColorScheme(
     tertiary: Color,
     surfaceBase: Color,
     surfaceBright: Color,
-    surfaceDim: Color
+    surfaceDim: Color,
+    pageBackground: Color
 ) = darkColorScheme(
 
     // PRIMARY
@@ -113,7 +115,7 @@ private fun vortexDarkColorScheme(
     onTertiaryContainer = white,
 
     // BACKGROUND / SURFACE
-    background = surfaceBase,
+    background = pageBackground,
     onBackground = white,
     surface = surfaceBase,
     onSurface = white,
@@ -139,11 +141,11 @@ private fun vortexDarkColorScheme(
     // SURFACE MULTI-LAYER (Material 3 elevations)
     surfaceBright = surfaceBright,
     surfaceDim = surfaceDim,
-    surfaceContainerLowest = surfaceBase.blend(white, 0.02f),
-    surfaceContainerLow = surfaceBase.blend(white, 0.04f),
-    surfaceContainer = surfaceBase.blend(white, 0.06f),
-    surfaceContainerHigh = surfaceBase.blend(white, 0.09f),
-    surfaceContainerHighest = surfaceBase.blend(white, 0.12f),
+    surfaceContainerLowest = surfaceBase.blend(white, 0.03f),
+    surfaceContainerLow = surfaceBase.blend(white, 0.06f),
+    surfaceContainer = surfaceBase.blend(white, 0.10f),
+    surfaceContainerHigh = surfaceBase.blend(white, 0.15f),
+    surfaceContainerHighest = surfaceBase.blend(white, 0.20f),
 
     // FIXED TONES (M3 requirement untuk stabil light/dark)
     primaryFixed = primary,

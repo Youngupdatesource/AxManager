@@ -132,7 +132,7 @@ class CrashActivity : ComponentActivity() {
                             color = MaterialTheme.colorScheme.error
                         )
                         Text(
-                            text = "axm-Next has encountered a problem and crashed.",
+                            text = "AxM-Next has encountered a problem and crashed.",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

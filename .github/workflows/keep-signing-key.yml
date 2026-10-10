@@ -1,0 +1,16 @@
+name: Keep signing key
+
+on:
+  schedule:
+    - cron: "17 3 */5 * *"
+  workflow_dispatch:
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Touch signing key cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/autokey
+          key: axm-next-signing-v1

@@ -264,7 +264,7 @@ fun HomeScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelGloba
 @Composable
 fun SupportCard() {
     val uriHandler = LocalUriHandler.current
-    val githubRepo = "https://github.com/Youngupdatesource/axm-Next"
+    val githubRepo = "https://github.com/Youngupdatesource/AxM-Next"
 
     ElevatedCard(
         onClick = {
@@ -810,7 +810,7 @@ private fun InfoRow(icon: ImageVector, label: String, value: String) {
 @Composable
 fun IssueReportCard() {
     val uriHandler = LocalUriHandler.current
-    val githubIssueUrl = "https://github.com/Youngupdatesource/axm-Next/issues"
+    val githubIssueUrl = "https://github.com/Youngupdatesource/AxM-Next/issues"
 
     ElevatedCard {
         Row(

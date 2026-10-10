@@ -1,4 +1,4 @@
-## axm-Next
+## AxM-Next
 
 A modified fork of [AxManager](https://github.com/fahrez182/AxManager) by fahrez182.
 
@@ -12,4 +12,4 @@ A modified fork of [AxManager](https://github.com/fahrez182/AxManager) by fahrez
 ### Install
 Download the APK below and verify it against the attached `.sha256` file. If Android refuses to install over an existing build, uninstall the old one first, because it was signed with a different key.
 
-See the [README](https://github.com/Youngupdatesource/axm-Next#readme) for details and credits.
+See the [README](https://github.com/Youngupdatesource/AxM-Next#readme) for details and credits.

@@ -1,22 +1,26 @@
-# axm-Next
+<p align="center">
+  <img src="docs/assets/logo.png" alt="AxM-Next logo" width="128">
+</p>
 
-> **axm-Next** is a modified fork of **[AxManager](https://github.com/fahrez182/AxManager)** by **fahrez182**: a self-contained, ADB/Root-powered environment manager for Android with plugins, a WebUI, and a permission manager built on the Shizuku API.
+<h1 align="center">AxM-Next</h1>
 
-[Switch to Chinese translation 切换到中文翻译](README_cn.md) *(upstream AxManager translation, not updated for axm-Next)*
+> **AxM-Next** is a modified fork of **[AxManager](https://github.com/fahrez182/AxManager)** by **fahrez182**: a self-contained, ADB/Root-powered environment manager for Android with plugins, a WebUI, and a permission manager built on the Shizuku API.
+
+[Switch to Chinese translation 切换到中文翻译](README_cn.md) *(upstream AxManager translation, not updated for AxM-Next)*
 
 ## 🍴 About this fork
 
-axm-Next is a fork of AxManager, which is created and maintained by [fahrez182](https://github.com/fahrez182). The core idea, architecture, and the vast majority of the code come from the original project, and all credit for that work belongs to its author.
+AxM-Next is a fork of AxManager, which is created and maintained by [fahrez182](https://github.com/fahrez182). The core idea, architecture, and the vast majority of the code come from the original project, and all credit for that work belongs to its author.
 
 - Original repository: <https://github.com/fahrez182/AxManager>
 - Original author: [fahrez182](https://github.com/fahrez182)
-- axm-Next maintainer: [Youngupdatesource (RelJawa)](https://github.com/Youngupdatesource)
+- AxM-Next maintainer: [Youngupdatesource (RelJawa)](https://github.com/Youngupdatesource)
 
 > **Important:** if you redistribute or modify this project, please keep attribution to the original developer, fahrez182, and retain the [Apache License 2.0](LICENSE).
 
 ## 💡 The concept
 
-AxManager explores a dedicated **ADB environment** on Android: instead of being a simple command runner, it keeps a resident, privileged layer (the `axeron_server` daemon) that apps and plugins can talk to. axm-Next keeps that foundation and focuses on a lighter, more stable, and more polished experience.
+AxManager explores a dedicated **ADB environment** on Android: instead of being a simple command runner, it keeps a resident, privileged layer (the `axeron_server` daemon) that apps and plugins can talk to. AxM-Next keeps that foundation and focuses on a lighter, more stable, and more polished experience.
 
 ## ✨ Features
 
@@ -27,10 +31,10 @@ AxManager explores a dedicated **ADB environment** on Android: instead of being 
 - 🌐 **WebUI**: manage the environment and plugins through a web-based interface.
 - 🔐 **Permission manager** built on the Shizuku API.
 
-### What axm-Next changes
+### What AxM-Next changes
 
 **UI / UX**
-- Rebranded as **axm-Next v1.0**, with new launcher icons and a new maintainer profile.
+- Rebranded as **AxM-Next v1.0**, with new launcher icons and a new maintainer profile.
 - **Status card banner** with your own image (JPG, PNG, WebP, or animated GIF, up to 8 MB) at a standard **16:9** ratio, configurable in *Appearance*.
 - Stat tiles and a device info card (device, kernel, Android version, ABI, SELinux context).
 - Swipe left or right to switch between tabs, plus reworked navigation transitions.
@@ -64,7 +68,7 @@ Restart the server after changing the file.
 
 ## 🔧 Build & Install
 
-axm-Next no longer relies on git history for versioning: the version is fixed at **1.0** (`versionCode` comes from the shared `api` manifest).
+AxM-Next no longer relies on git history for versioning: the version is fixed at **1.0** (`versionCode` comes from the shared `api` manifest).
 
 ### Requirements
 - JDK 21
@@ -75,8 +79,8 @@ axm-Next no longer relies on git history for versioning: the version is fixed at
 ### Build locally
 
 ```bash
-git clone --recursive https://github.com/Youngupdatesource/axm-Next.git
-cd axm-Next
+git clone --recursive https://github.com/Youngupdatesource/AxM-Next.git
+cd AxM-Next
 ```
 
 Create a keystore once and describe it in `local.properties` (never commit either file):
@@ -95,41 +99,42 @@ Then build:
 ./gradlew :manager:assembleRelease
 ```
 
-The APK is written to `manager/build/outputs/apk/release/` as `axm-Next_v1.0_<versionCode>-release_<timestamp>.apk`. Use `:manager:assembleDebug` for a debug build.
+The APK is written to `manager/build/outputs/apk/release/` as `AxM-Next_v1.0_<versionCode>-release_<timestamp>.apk`. Use `:manager:assembleDebug` for a debug build.
 
 > Release builds strip `android.util.Log` calls through R8 rules. Use a debug build when you need to read the app or server logs.
 
 ### Build with GitHub Actions
 
-You can build entirely on GitHub, even from a phone, with the workflow in `.github/workflows/build.yml`.
+You can build entirely on GitHub, even from a phone, with the workflow in `.github/workflows/build.yml`. No signing setup is required.
 
 1. Open the **Actions** tab of your fork and enable workflows.
-2. Create a signing keystore and store it as repository secrets (one time):
-
-   ```bash
-   keytool -genkeypair -keystore axm-next.jks -storetype PKCS12 -alias axm -keyalg RSA -keysize 2048 -validity 10000
-   base64 -w0 axm-next.jks | gh secret set KEYSTORE_B64
-   gh secret set KEYSTORE_PASSWORD
-   gh secret set KEY_ALIAS
-   gh secret set KEY_PASSWORD
-   ```
-
-   For a PKCS12 keystore, `KEY_PASSWORD` must be the same as `KEYSTORE_PASSWORD`. Keep a private backup of `axm-next.jks`: if you lose it, new builds can no longer update installed ones.
-3. Run the workflow:
+2. Run the workflow:
 
    ```bash
    gh workflow run build.yml -f build_type=Release
    gh run watch
    ```
 
-4. Download the APK:
+3. Download the APK:
 
    ```bash
    gh run list --limit 3
-   gh run download <run-id> -n axm-next-apk
+   gh run download <run-id> -n AxM-Next-apk
    ```
 
-If the signing secrets are missing or invalid, the workflow signs with a temporary random key and prints a warning. Such an APK cannot be used to update an existing install.
+**Signing is automatic.** Android refuses to install an unsigned APK, so every build is signed. The first run creates a random signing key and keeps it in the GitHub Actions cache, and every later build reuses it, so new builds install over old ones without any manual key step. A small scheduled workflow (`keep-signing-key.yml`) touches the cache every few days so GitHub does not evict it.
+
+If the cache is ever lost, the next build creates a new key and Android will ask you to uninstall the old build once. If you want a permanent key that you control, store it as repository secrets instead, and the workflow will prefer them:
+
+```bash
+keytool -genkeypair -keystore axm-next.jks -storetype PKCS12 -alias axm -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 axm-next.jks | gh secret set KEYSTORE_B64
+gh secret set KEYSTORE_PASSWORD
+gh secret set KEY_ALIAS
+gh secret set KEY_PASSWORD
+```
+
+For a PKCS12 keystore, `KEY_PASSWORD` must equal `KEYSTORE_PASSWORD`. Keep a private backup of the keystore.
 
 ### Publish a release
 
@@ -137,12 +142,12 @@ If the signing secrets are missing or invalid, the workflow signs with a tempora
 gh workflow run build.yml -f build_type=Release -f publish=true -f tag=v1.0
 ```
 
-Publishing requires a valid signing keystore (the workflow refuses to publish an APK signed with a random key). It attaches the APK and its SHA-256 checksum to a GitHub release.
+This attaches the APK and its SHA-256 checksum to a GitHub release. For public releases, a permanent key stored in the repository secrets is recommended, because users can only update between builds that share the same signature.
 
 ### Install
 
 ```bash
-adb install -r manager/build/outputs/apk/release/axm-Next_*.apk
+adb install -r manager/build/outputs/apk/release/AxM-Next_*.apk
 ```
 
 Or copy the APK to your phone and open it. If Android refuses to install over an existing build, the existing one was signed with a different key. Uninstall it first.
@@ -174,7 +179,7 @@ This project includes adapted portions of code from:
 - AxManager (© fahrez182), licensed under the Apache License 2.0. Repository: <https://github.com/fahrez182/AxManager>
 - Other open-source projects as credited above.
 
-axm-Next does not include or distribute any original Shizuku Manager visual assets, and it is not an official replacement for any of the projects above. Axora and FolkPure are credited as design inspiration only. All adapted code is used with attribution and in compliance with the Apache License 2.0.
+AxM-Next does not include or distribute any original Shizuku Manager visual assets, and it is not an official replacement for any of the projects above. Axora and FolkPure are credited as design inspiration only. All adapted code is used with attribution and in compliance with the Apache License 2.0.
 
 ## 📜 License
-Licensed under the [Apache License 2.0](LICENSE). Modifications are made by the axm-Next maintainer as described above.
+Licensed under the [Apache License 2.0](LICENSE). Modifications are made by the AxM-Next maintainer as described above.
