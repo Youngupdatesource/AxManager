@@ -47,13 +47,33 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          KS="$RUNNER_TEMP/release.jks"
+          valid=0
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$KS" 2>/dev/null || true
+            if keytool -list -keystore "$KS" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null 2>&1; then
+              valid=1
+            fi
+          fi
+          if [ "$valid" = 1 ]; then
+            SP="$KEYSTORE_PASSWORD"
+            KA="$KEY_ALIAS"
+            KP="$KEY_PASSWORD"
+          else
+            echo "::warning::secret signing kosong atau tidak valid, memakai keystore acak sementara"
+            rm -f "$KS"
+            SP="$(openssl rand -hex 16)"
+            KA="ax"
+            KP="$SP"
+            echo "::add-mask::$SP"
+            keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias "$KA" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SP" -keypass "$KP" -dname "CN=AxManager"
+          fi
           {
             echo "sdk.dir=$ANDROID_HOME"
-            echo "signing.storeFile=$RUNNER_TEMP/release.jks"
-            echo "signing.storePassword=$KEYSTORE_PASSWORD"
-            echo "signing.keyAlias=$KEY_ALIAS"
-            echo "signing.keyPassword=$KEY_PASSWORD"
+            echo "signing.storeFile=$KS"
+            echo "signing.storePassword=$SP"
+            echo "signing.keyAlias=$KA"
+            echo "signing.keyPassword=$KP"
           } > local.properties
 
       - name: Build

@@ -264,11 +264,11 @@ fun HomeScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewModelGloba
 @Composable
 fun SupportCard() {
     val uriHandler = LocalUriHandler.current
-    val githubFahrez182 = "https://github.com/fahrez182/AxManager"
+    val githubRepo = "https://github.com/Youngupdatesource/axm-Next"
 
     ElevatedCard(
         onClick = {
-            uriHandler.openUri(githubFahrez182)
+            uriHandler.openUri(githubRepo)
         }
     ) {
         Row(
@@ -810,8 +810,7 @@ private fun InfoRow(icon: ImageVector, label: String, value: String) {
 @Composable
 fun IssueReportCard() {
     val uriHandler = LocalUriHandler.current
-    val githubIssueUrl = "https://github.com/fahrez182/AxManager/issues"
-    val telegramUrl = "https://t.me/axeron_manager"
+    val githubIssueUrl = "https://github.com/Youngupdatesource/axm-Next/issues"
 
     ElevatedCard {
         Row(
@@ -841,19 +840,11 @@ fun IssueReportCard() {
                     )
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                IconButton(onClick = { uriHandler.openUri(githubIssueUrl) }) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_github),
-                        contentDescription = "Report to github",
-                    )
-                }
-                IconButton(onClick = { uriHandler.openUri(telegramUrl) }) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_telegram),
-                        contentDescription = "Report to telegram",
-                    )
-                }
+            IconButton(onClick = { uriHandler.openUri(githubIssueUrl) }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_github),
+                    contentDescription = "Report to github",
+                )
             }
         }
     }

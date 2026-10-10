@@ -1,74 +1,180 @@
-# Axeron Manager (Proof of Concept)
+# axm-Next
 
-> **Axeron Manager (AxManager)** is a Proof of Concept (POC) for a self-created environment on Android that leverages ADB permissions to provide system-level control. This project explores the idea of creating a persistent, independent ADB-based execution layer within the system.
+> **axm-Next** is a modified fork of **[AxManager](https://github.com/fahrez182/AxManager)** by **fahrez182**: a self-contained, ADB/Root-powered environment manager for Android with plugins, a WebUI, and a permission manager built on the Shizuku API.
 
-[Switch to Chinese translation 切换到中文翻译](README_cn.md)
+[Switch to Chinese translation 切换到中文翻译](README_cn.md) *(upstream AxManager translation, not updated for axm-Next)*
 
-## 💡 The Concept
-This project is a personal exploration into creating a dedicated **ADB Environment** on Android. Instead of just being a simple command runner, AxManager aims to establish a background infrastructure that can host plugins, manage system optimizations, and provide a unified interface for privileged operations—all without requiring full root access (though it can utilize root if available).
+## 🍴 About this fork
+
+axm-Next is a fork of AxManager, which is created and maintained by [fahrez182](https://github.com/fahrez182). The core idea, architecture, and the vast majority of the code come from the original project, and all credit for that work belongs to its author.
+
+- Original repository: <https://github.com/fahrez182/AxManager>
+- Original author: [fahrez182](https://github.com/fahrez182)
+- axm-Next maintainer: [Youngupdatesource (RelJawa)](https://github.com/Youngupdatesource)
+
+> **Important:** if you redistribute or modify this project, please keep attribution to the original developer, fahrez182, and retain the [Apache License 2.0](LICENSE).
+
+## 💡 The concept
+
+AxManager explores a dedicated **ADB environment** on Android: instead of being a simple command runner, it keeps a resident, privileged layer (the `axeron_server` daemon) that apps and plugins can talk to. axm-Next keeps that foundation and focuses on a lighter, more stable, and more polished experience.
 
 ## ✨ Features
-- 🏗️ **Internal ADB Environment**  
-  A self-contained environment designed to maintain and utilize ADB-level privileges.
-- 🖥️ **Shell Executor**  
-  Run shell commands with persistent sessions.  
-  - Supports **ADB / Non-Root execution**.  
-  - Optional **Root execution** for enhanced capabilities.  
 
-- ⚡ **Plugin (Unrooted Module)**  
-  A system to manage third-party modules within the unrooted environment. [Learn more](https://fahrez182.github.io/AxManager/plugin/what-is-plugin.html)  
+### Inherited from AxManager
+- 🏗️ **Internal ADB environment**: a self-contained environment that maintains and uses ADB-level privileges.
+- 🖥️ **Shell executor**: run shell commands with persistent sessions, via ADB (non-root) or optionally root.
+- ⚡ **Plugins (unrooted modules)**: manage third-party modules without root. [Learn more](https://fahrez182.github.io/AxManager/plugin/what-is-plugin.html)
+- 🌐 **WebUI**: manage the environment and plugins through a web-based interface.
+- 🔐 **Permission manager** built on the Shizuku API.
 
-- 🌐 **WebUI Interface**  
-  Manage and interact with the system environment through a web-based interface.
+### What axm-Next changes
 
-## 📱 Why this POC?
-- **Independence**: Aims to minimize reliance on external PCs for ADB tasks once set up.
-- **Environment-centric**: Focuses on creating a resident privileged layer rather than just one-off command execution.
-- **Accessibility**: Bringing "Root-like" capabilities to non-rooted devices through native system mechanisms.
+**UI / UX**
+- Rebranded as **axm-Next v1.0**, with new launcher icons and a new maintainer profile.
+- **Status card banner** with your own image (JPG, PNG, WebP, or animated GIF, up to 8 MB) at a standard **16:9** ratio, configurable in *Appearance*.
+- Stat tiles and a device info card (device, kernel, Android version, ABI, SELinux context).
+- Swipe left or right to switch between tabs, plus reworked navigation transitions.
+- **Plugin WebUI shortcuts, customizable:** long-press a plugin card to open a centered configuration dialog. Choose the shortcut name and icon (default, the plugin's banner, or your own image). Icons are built as *adaptive icons*, so your launcher decides the final shape (circle, squircle, and so on).
+- **Permission manager filter:** only show apps that request `moe.shizuku.manager.permission.API_V23`, so the list reflects apps that really use the Shizuku API. Apps that are switched on are pinned to the top.
 
-## 📖 Roadmap
-- [x] Wireless Debugging Activator.
-- [x] Command-line / Root Activator.
-- [x] Shell Executor basic support (ADB/Non-Root).
-- [x] Auto active when use Wireless Debugging (Test)
-- [x] [Plugin](https://fahrez182.github.io/AxManager/plugin/what-is-plugin.html) system for third-party extensions.  
-- [x] Developer Mode & Advanced Debugging tools.  
-- [ ] App optimization based on profiles.
+**Performance**
+- App icon loading is throttled (at most three in parallel), uses fixed-size requests, and keeps a bounded 16 MB memory cache that is cleared when the app goes to the background.
+- Search keys (including Pinyin) are computed once instead of on every keystroke.
+- The permission list skips system apps early and loads in parallel.
+- WebUI icons use a bounded cache, recycled bitmaps, smaller images, and HTTP cache headers.
+- Network client is created lazily.
+
+**Reliability and power**
+- **Configurable wake lock policy** for `axeron_server` (see below). The default holds no wake lock, so the device can reach deep sleep.
+- **Server Guard:** the manager checks the server periodically (WorkManager, every 30 minutes) and restarts it with exponential backoff if it stops unexpectedly. Intentional shutdowns and restarts from the app are respected, and auto-restart can be turned off with the `server_guard_auto_restart` setting.
+- **Daemon Guard:** on every server start, the daemon logs diagnostics (cgroup, `oom_score_adj`, adbd state) and exempts the manager from battery optimization and background restrictions. This does not keep the CPU awake.
+- The server retries the manager-app lookup before exiting, so a transient failure no longer kills the daemon.
+
+### Wake lock modes
+
+The mode is read once when the server starts, from a file named `ax_wakelock_mode` placed in the same folder as `ax_perm_companion` (the server prints the exact path in logcat on start).
+
+| File content | Behavior |
+| --- | --- |
+| *(missing or anything else)* | **never** (default). No wake lock is held. |
+| `adaptive` | A wake lock is held only while commands run, for 60 seconds after the last client call, and for the first 60 seconds after the server starts. |
+| `always` | A permanent wake lock, like the original AxManager. Uses more battery. |
+
+Restart the server after changing the file.
 
 ## 🔧 Build & Install
-Clone the repository and build using Android Studio or Gradle:
+
+axm-Next no longer relies on git history for versioning: the version is fixed at **1.0** (`versionCode` comes from the shared `api` manifest).
+
+### Requirements
+- JDK 21
+- Android SDK platform 36, build-tools 36.0.0
+- NDK 29.0.14206865 and CMake 3.22.1
+- Git (the `api` folder is a submodule, so clone recursively)
+
+### Build locally
 
 ```bash
-git clone https://github.com/fahrez182/AxManager.git
-cd AxManager
-./gradlew :manager:assembleDebug
+git clone --recursive https://github.com/Youngupdatesource/axm-Next.git
+cd axm-Next
 ```
 
-Install the manager app to your device via ADB:
+Create a keystore once and describe it in `local.properties` (never commit either file):
+
+```properties
+sdk.dir=/path/to/android/sdk
+signing.storeFile=/path/to/axm-next.jks
+signing.storePassword=your-store-password
+signing.keyAlias=your-alias
+signing.keyPassword=your-key-password
+```
+
+Then build:
 
 ```bash
-adb install manager/build/outputs/apk/debug/manager-debug.apk
+./gradlew :manager:assembleRelease
 ```
+
+The APK is written to `manager/build/outputs/apk/release/` as `axm-Next_v1.0_<versionCode>-release_<timestamp>.apk`. Use `:manager:assembleDebug` for a debug build.
+
+> Release builds strip `android.util.Log` calls through R8 rules. Use a debug build when you need to read the app or server logs.
+
+### Build with GitHub Actions
+
+You can build entirely on GitHub, even from a phone, with the workflow in `.github/workflows/build.yml`.
+
+1. Open the **Actions** tab of your fork and enable workflows.
+2. Create a signing keystore and store it as repository secrets (one time):
+
+   ```bash
+   keytool -genkeypair -keystore axm-next.jks -storetype PKCS12 -alias axm -keyalg RSA -keysize 2048 -validity 10000
+   base64 -w0 axm-next.jks | gh secret set KEYSTORE_B64
+   gh secret set KEYSTORE_PASSWORD
+   gh secret set KEY_ALIAS
+   gh secret set KEY_PASSWORD
+   ```
+
+   For a PKCS12 keystore, `KEY_PASSWORD` must be the same as `KEYSTORE_PASSWORD`. Keep a private backup of `axm-next.jks`: if you lose it, new builds can no longer update installed ones.
+3. Run the workflow:
+
+   ```bash
+   gh workflow run build.yml -f build_type=Release
+   gh run watch
+   ```
+
+4. Download the APK:
+
+   ```bash
+   gh run list --limit 3
+   gh run download <run-id> -n axm-next-apk
+   ```
+
+If the signing secrets are missing or invalid, the workflow signs with a temporary random key and prints a warning. Such an APK cannot be used to update an existing install.
+
+### Publish a release
+
+```bash
+gh workflow run build.yml -f build_type=Release -f publish=true -f tag=v1.0
+```
+
+Publishing requires a valid signing keystore (the workflow refuses to publish an APK signed with a random key). It attaches the APK and its SHA-256 checksum to a GitHub release.
+
+### Install
+
+```bash
+adb install -r manager/build/outputs/apk/release/axm-Next_*.apk
+```
+
+Or copy the APK to your phone and open it. If Android refuses to install over an existing build, the existing one was signed with a different key. Uninstall it first.
+
+## 📖 Roadmap
+- [x] Wireless Debugging activator.
+- [x] Command-line / Root activator.
+- [x] Shell executor basic support (ADB / non-root).
+- [x] Auto-activate when using Wireless Debugging (test).
+- [x] [Plugin](https://fahrez182.github.io/AxManager/plugin/what-is-plugin.html) system for third-party extensions.
+- [x] Developer mode and advanced debugging tools.
+- [x] Server auto-recovery and configurable wake lock policy.
+- [ ] App optimization based on profiles.
 
 ## 🤝 Contribution
-Contributions are welcome!  
-Feel free to open **issues**, submit **pull requests**, or start a discussion for new ideas and improvements.
-
+Contributions are welcome. Open an **issue**, submit a **pull request**, or start a discussion for ideas and improvements.
 
 ## 🙏 Credits
-- **[Magisk]()** "**BusyBox** and Plugin (Unrooted module) ideas"
-- **[Shizuku](https://github.com/RikkaApps/Shizuku) / [API](https://github.com/RikkaApps/Shizuku-API)** "Starting point and reference for learning Android IPC and ADB-based permission handling"
-- **[KernelSU](https://github.com/tiann/KernelSU) / [Next](https://github.com/KernelSU-Next/KernelSU-Next)** "Inspiration for the UI and WebUI features."
+- **[AxManager](https://github.com/fahrez182/AxManager)** by **fahrez182**: the original project this fork is based on.
+- **[Axora](https://github.com/corvexis/Axora)**: UI/UX inspiration.
+- **[FolkPure](https://github.com/matsuzaka-yuki/FolkPure)**: UI/UX inspiration.
+- **[Magisk](https://github.com/topjohnwu/Magisk)**: BusyBox and plugin (unrooted module) ideas.
+- **[Shizuku](https://github.com/RikkaApps/Shizuku) / [Shizuku-API](https://github.com/RikkaApps/Shizuku-API)**: starting point and reference for Android IPC and ADB-based permission handling.
+- **[KernelSU](https://github.com/tiann/KernelSU) / [KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next)**: inspiration for the UI and WebUI features.
 
-## ⚠️ Notices & Legal Disclaimer
+## ⚠️ Notices & legal disclaimer
 This project includes adapted portions of code from:
-- Shizuku Manager (© Rikka Apps)
-  Licensed under the Apache License, Version 2.0
-  Repository: https://github.com/RikkaApps/Shizuku
+- Shizuku Manager (© Rikka Apps), licensed under the Apache License 2.0. Repository: <https://github.com/RikkaApps/Shizuku>
+- AxManager (© fahrez182), licensed under the Apache License 2.0. Repository: <https://github.com/fahrez182/AxManager>
 - Other open-source projects as credited above.
 
-AxManager does not include or distribute any original Shizuku Manager visual assets or claim to be an official replacement.
-All adapted code is used strictly for educational and experimental purposes, with clear attribution and compliance with the Apache License 2.0.
+axm-Next does not include or distribute any original Shizuku Manager visual assets, and it is not an official replacement for any of the projects above. Axora and FolkPure are credited as design inspiration only. All adapted code is used with attribution and in compliance with the Apache License 2.0.
 
 ## 📜 License
-Licensed under the [Apache License 2.0](LICENSE).
+Licensed under the [Apache License 2.0](LICENSE). Modifications are made by the axm-Next maintainer as described above.
