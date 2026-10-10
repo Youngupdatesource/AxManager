@@ -101,6 +101,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import frb.axeron.manager.ui.component.loadPluginBannerBitmap
 import frb.axeron.manager.ui.component.readShortcutBitmap
+import androidx.compose.foundation.shape.CircleShape
+import frb.axeron.manager.ui.component.adaptiveShortcutBitmap
 
 private enum class ShortcutIconSource { DEFAULT, BANNER, CUSTOM }
 
@@ -176,7 +178,7 @@ fun PluginConfig(
                     Box(
                         modifier = Modifier
                             .size(64.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.secondaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
@@ -251,6 +253,12 @@ fun PluginConfig(
                         label = { Text(stringResource(R.string.shortcut_icon_custom)) }
                     )
                 }
+
+                Text(
+                    text = stringResource(R.string.shortcut_icon_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

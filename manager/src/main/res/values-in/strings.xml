@@ -228,4 +228,5 @@
     <string name="shortcut_banner_unavailable">Banner plugin tidak tersedia</string>
     <string name="shortcut_image_failed">Gagal memuat gambar</string>
     <string name="shortcut_no_webui">Plugin ini tidak memiliki WebUI</string>
+    <string name="shortcut_icon_hint">Bentuk akhir ditentukan launcher (bundar, squircle, dan lainnya)</string>
 </resources>

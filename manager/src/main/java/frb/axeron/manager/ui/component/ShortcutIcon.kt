@@ -18,8 +18,14 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
 
-const val SHORTCUT_ICON_SIZE_PX = 192
+const val SHORTCUT_ICON_SIZE_PX = 288
+private const val ADAPTIVE_CANVAS_PX = 432
+private const val BACKDROP_BLUR_PX = 16
 private const val SHORTCUT_IMAGE_MAX_BYTES = 16 * 1024 * 1024
 
 fun squareBitmap(source: Bitmap, size: Int = SHORTCUT_ICON_SIZE_PX): Bitmap {
@@ -31,6 +37,22 @@ fun squareBitmap(source: Bitmap, size: Int = SHORTCUT_ICON_SIZE_PX): Bitmap {
     val scaled = Bitmap.createScaledBitmap(cropped, size, size, true)
     if (scaled !== cropped && cropped !== source) cropped.recycle()
     return scaled
+}
+
+fun adaptiveShortcutBitmap(source: Bitmap): Bitmap {
+    val canvasSize = ADAPTIVE_CANVAS_PX
+    val windowSize = canvasSize * 2 / 3
+    val inset = (canvasSize - windowSize) / 2
+    val result = Bitmap.createBitmap(canvasSize, canvasSize, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(result)
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+
+    canvas.drawColor(Color.WHITE)
+    val backdrop = Bitmap.createScaledBitmap(source, BACKDROP_BLUR_PX, BACKDROP_BLUR_PX, true)
+    canvas.drawBitmap(backdrop, null, Rect(0, 0, canvasSize, canvasSize), paint)
+    if (backdrop !== source) backdrop.recycle()
+    canvas.drawBitmap(source, null, Rect(inset, inset, inset + windowSize, inset + windowSize), paint)
+    return result
 }
 
 private fun InputStream.readLimited(limit: Int): ByteArray? {

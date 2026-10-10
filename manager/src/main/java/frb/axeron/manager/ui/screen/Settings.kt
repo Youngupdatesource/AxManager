@@ -381,9 +381,9 @@ fun DeveloperInfo(
     onDismissRequest: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
-    val githubUrl = "https://github.com/fahrez182"
-    val telegramUrl = "https://t.me/fahrezone"
-    val sociabuzzUrl = "https://sociabuzz.com/fahrezone/tribe"
+    val githubUrl = "https://github.com/Youngupdatesource"
+    val telegramUrl = "https://t.me/Youngupdatesource"
+    val sociabuzzUrl = "https://sociabuzz.com/reljawa/tribe"
 
     if (showDialog) {
         ModalBottomSheet(
@@ -407,7 +407,7 @@ fun DeveloperInfo(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.fahrez182),
+                        painter = painterResource(id = R.drawable.maintainer_avatar),
                         contentDescription = "Developer Profile Picture",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -421,7 +421,7 @@ fun DeveloperInfo(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "fahrez182 (FahrezONE)",
+                    text = "Youngupdatesource (RelJawa)",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )

@@ -740,14 +740,6 @@ fun WarningCard(
 @Composable
 fun InfoCard(activateViewModel: ActivateViewModel) {
     val axeronInfo = activateViewModel.axeronInfo
-    val context = LocalContext.current
-
-    val appVersion = remember {
-        runCatching {
-            val info = context.packageManager.getPackageInfo(context.packageName, 0)
-            "v${info.versionName} (${PackageInfoCompat.getLongVersionCode(info)})"
-        }.getOrDefault("-")
-    }
     val kernel = remember { System.getProperty("os.version").orEmpty().ifBlank { "-" } }
 
     Card(
@@ -761,11 +753,6 @@ fun InfoCard(activateViewModel: ActivateViewModel) {
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            InfoRow(
-                icon = Icons.Outlined.Apps,
-                label = stringResource(R.string.app_name),
-                value = appVersion
-            )
             InfoRow(
                 icon = Icons.Outlined.PhoneAndroid,
                 label = stringResource(R.string.device_info),

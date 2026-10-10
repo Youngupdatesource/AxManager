@@ -83,7 +83,7 @@ fun createWebUIShortcut(
     val shortcutManager = context.getSystemService(ShortcutManager::class.java) ?: return
     val shortLabel = label.trim().ifEmpty { plugin.prop.name }
     val icon = if (iconBitmap != null) {
-        Icon.createWithBitmap(iconBitmap)
+        Icon.createWithAdaptiveBitmap(adaptiveShortcutBitmap(iconBitmap))
     } else {
         Icon.createWithResource(context, R.mipmap.ic_launcher)
     }

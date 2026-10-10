@@ -228,4 +228,5 @@
     <string name="shortcut_banner_unavailable">Plugin banner is not available</string>
     <string name="shortcut_image_failed">Failed to load image</string>
     <string name="shortcut_no_webui">This plugin has no WebUI</string>
+    <string name="shortcut_icon_hint">The launcher decides the final shape (circle, squircle, and so on)</string>
 </resources>
