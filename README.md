@@ -105,36 +105,35 @@ The APK is written to `manager/build/outputs/apk/release/` as `AxM-Next_v1.0_<ve
 
 ### Build with GitHub Actions
 
-You can build entirely on GitHub, even from a phone, with the workflow in `.github/workflows/build.yml`. No signing setup is required.
+You can build entirely on GitHub, even from a phone, with the workflow in `.github/workflows/build.yml`.
 
 1. Open the **Actions** tab of your fork and enable workflows.
-2. Run the workflow:
+2. Optional but recommended: store a permanent signing key as repository secrets (one time):
+
+   ```bash
+   keytool -genkeypair -keystore axm-next.jks -storetype PKCS12 -alias axm -keyalg RSA -keysize 2048 -validity 10000
+   base64 -w0 axm-next.jks | gh secret set KEYSTORE_B64
+   gh secret set KEYSTORE_PASSWORD
+   gh secret set KEY_ALIAS
+   gh secret set KEY_PASSWORD
+   ```
+
+   For a PKCS12 keystore, `KEY_PASSWORD` must equal `KEYSTORE_PASSWORD`. Keep a private backup of the keystore: if you lose it, new builds can no longer update installed ones.
+3. Run the workflow:
 
    ```bash
    gh workflow run build.yml -f build_type=Release
    gh run watch
    ```
 
-3. Download the APK:
+4. Download the APK:
 
    ```bash
    gh run list --limit 3
    gh run download <run-id> -n AxM-Next-apk
    ```
 
-**Signing is automatic.** Android refuses to install an unsigned APK, so every build is signed. The first run creates a random signing key and keeps it in the GitHub Actions cache, and every later build reuses it, so new builds install over old ones without any manual key step. A small scheduled workflow (`keep-signing-key.yml`) touches the cache every few days so GitHub does not evict it.
-
-If the cache is ever lost, the next build creates a new key and Android will ask you to uninstall the old build once. If you want a permanent key that you control, store it as repository secrets instead, and the workflow will prefer them:
-
-```bash
-keytool -genkeypair -keystore axm-next.jks -storetype PKCS12 -alias axm -keyalg RSA -keysize 2048 -validity 10000
-base64 -w0 axm-next.jks | gh secret set KEYSTORE_B64
-gh secret set KEYSTORE_PASSWORD
-gh secret set KEY_ALIAS
-gh secret set KEY_PASSWORD
-```
-
-For a PKCS12 keystore, `KEY_PASSWORD` must equal `KEYSTORE_PASSWORD`. Keep a private backup of the keystore.
+If the signing secrets are missing or invalid, the workflow generates a temporary random key and prints a warning. Android requires every APK to be signed, but an APK signed with a random key cannot update an existing install, so uninstall the old build first.
 
 ### Publish a release
 
@@ -142,7 +141,7 @@ For a PKCS12 keystore, `KEY_PASSWORD` must equal `KEYSTORE_PASSWORD`. Keep a pri
 gh workflow run build.yml -f build_type=Release -f publish=true -f tag=v1.0
 ```
 
-This attaches the APK and its SHA-256 checksum to a GitHub release. For public releases, a permanent key stored in the repository secrets is recommended, because users can only update between builds that share the same signature.
+Publishing requires valid signing secrets (the workflow refuses to publish an APK signed with a random key). It attaches the APK and its SHA-256 checksum to a GitHub release.
 
 ### Install
 
