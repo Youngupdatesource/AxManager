@@ -20,6 +20,7 @@ import frb.axeron.manager.R
 import frb.axeron.manager.ui.webui.WebUIActivity
 import frb.axeron.server.PluginInfo
 import java.util.Locale
+import android.graphics.Bitmap
 
 @get:Composable
 val Int.scaleDp: Dp
@@ -73,29 +74,39 @@ fun formatSize(size: Long): String {
     }
 }
 
-fun createWebUIShortcut(context: Context, plugin: PluginInfo) {
-    val shortcutManager = context.getSystemService(ShortcutManager::class.java)
+fun createWebUIShortcut(
+    context: Context,
+    plugin: PluginInfo,
+    label: String = plugin.prop.name,
+    iconBitmap: Bitmap? = null
+) {
+    val shortcutManager = context.getSystemService(ShortcutManager::class.java) ?: return
+    val shortLabel = label.trim().ifEmpty { plugin.prop.name }
+    val icon = if (iconBitmap != null) {
+        Icon.createWithBitmap(iconBitmap)
+    } else {
+        Icon.createWithResource(context, R.mipmap.ic_launcher)
+    }
+
+    val shortcut = ShortcutInfo.Builder(context, plugin.prop.id)
+        .setShortLabel(shortLabel)
+        .setLongLabel(shortLabel)
+        .setIcon(icon)
+        .setIntent(
+            Intent(context, WebUIActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                putExtra("id", plugin.prop.id)
+            }
+        )
+        .build()
 
     if (shortcutManager.pinnedShortcuts.any { it.id == plugin.prop.id }) {
-        Toast.makeText(
-            context, "Shortcut already pinned", Toast.LENGTH_SHORT
-        ).show()
+        shortcutManager.updateShortcuts(listOf(shortcut))
+        Toast.makeText(context, R.string.shortcut_updated, Toast.LENGTH_SHORT).show()
         return
     }
 
-    if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported) {
-        val shortcut = ShortcutInfo.Builder(context, plugin.prop.id)
-            .setShortLabel(plugin.prop.name)
-            .setLongLabel(plugin.prop.name)
-            .setIcon(Icon.createWithResource(context, R.mipmap.ic_launcher))
-            .setIntent(
-                Intent(context, WebUIActivity::class.java).apply {
-                    action = Intent.ACTION_VIEW
-                    putExtra("id", plugin.prop.id)
-                }
-            )
-            .build()
-
+    if (shortcutManager.isRequestPinShortcutSupported) {
         shortcutManager.requestPinShortcut(shortcut, null)
     }
 }

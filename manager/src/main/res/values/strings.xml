@@ -215,4 +215,17 @@
     <string name="home_banner_failed">Couldn\'t load that image</string>
     <string name="device_info">Device Info</string>
     <string name="kernel_version">Kernel</string>
+    <string name="privilege_filter">Filter</string>
+    <string name="privilege_filter_shizuku">Shizuku API apps only</string>
+    <string name="shortcut_name">Shortcut name</string>
+    <string name="shortcut_icon">Shortcut icon</string>
+    <string name="shortcut_icon_default">Default</string>
+    <string name="shortcut_icon_banner">Plugin banner</string>
+    <string name="shortcut_icon_custom">Custom image</string>
+    <string name="shortcut_create">Create shortcut</string>
+    <string name="shortcut_update">Update shortcut</string>
+    <string name="shortcut_updated">Shortcut updated</string>
+    <string name="shortcut_banner_unavailable">Plugin banner is not available</string>
+    <string name="shortcut_image_failed">Failed to load image</string>
+    <string name="shortcut_no_webui">This plugin has no WebUI</string>
 </resources>

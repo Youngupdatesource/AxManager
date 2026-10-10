@@ -50,6 +50,7 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
         val packageInfo: PackageInfo,
         val isAdded: Boolean,
         val pinyin: String = "",
+        val usesShizuku: Boolean = false,
     ) : Parcelable {
         class Handler : AxWebLoader.PathHandler {
             override fun handle(

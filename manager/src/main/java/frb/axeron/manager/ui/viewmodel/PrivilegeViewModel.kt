@@ -18,6 +18,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.content.Context
+import android.content.pm.PackageManager
 
 class PrivilegeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -25,6 +27,28 @@ class PrivilegeViewModel(application: Application) : AndroidViewModel(applicatio
         private const val FLAG_ALLOWED = 1 shl 1
         private const val FLAG_DENIED = 1 shl 2
         private const val MASK_PERMISSION = FLAG_ALLOWED or FLAG_DENIED
+        private const val SHIZUKU_PERMISSION = "moe.shizuku.manager.permission.API_V23"
+        private const val KEY_SHIZUKU_ONLY = "privilege_shizuku_only"
+
+        private val PRIVILEGE_ORDER = compareByDescending<AppsViewModel.AppInfo> { it.isAdded }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.label }
+    }
+
+    private class LoadedApp(
+        val packageInfo: PackageInfo,
+        val label: String,
+        val isGranted: Boolean,
+        val usesShizuku: Boolean
+    )
+
+    private val prefs = application.getSharedPreferences("settings", Context.MODE_PRIVATE)
+
+    var shizukuOnly by mutableStateOf(prefs.getBoolean(KEY_SHIZUKU_ONLY, true))
+        private set
+
+    fun updateShizukuOnly(value: Boolean) {
+        shizukuOnly = value
+        prefs.edit().putBoolean(KEY_SHIZUKU_ONLY, value).apply()
     }
 
     var isRefreshing: Boolean by mutableStateOf(false)
@@ -32,23 +56,21 @@ class PrivilegeViewModel(application: Application) : AndroidViewModel(applicatio
 
     var search by mutableStateOf("")
 
-    // Di PrivilegeViewModel.kt
     val privilegeList by derivedStateOf {
         val currentSearch = search
-        val allPrivileges = privileges.values
+        val onlyShizuku = shizukuOnly
 
-        if (currentSearch.isEmpty()) {
-            allPrivileges.filter { it.isNotSystemOrSelf() }.toList()
-        } else {
-            allPrivileges.asSequence()
-                .filter { it.isNotSystemOrSelf() }
-                .filter { app ->
-                    app.label.contains(currentSearch, true) ||
-                            app.packageName.contains(currentSearch, true) ||
-                            (app.pinyin.isNotEmpty() && app.pinyin.contains(currentSearch, true))
-                }
-                .toList()
-        }
+        privileges.values.asSequence()
+            .filter { it.isNotSystemOrSelf() }
+            .filter { !onlyShizuku || it.usesShizuku }
+            .filter { app ->
+                currentSearch.isEmpty() ||
+                        app.label.contains(currentSearch, true) ||
+                        app.packageName.contains(currentSearch, true) ||
+                        (app.pinyin.isNotEmpty() && app.pinyin.contains(currentSearch, true))
+            }
+            .sortedWith(PRIVILEGE_ORDER)
+            .toList()
             .also { isRefreshing = false }
     }
 
@@ -91,7 +113,7 @@ class PrivilegeViewModel(application: Application) : AndroidViewModel(applicatio
 
 
     private fun getApplications(): List<PackageInfo> {
-        return application.packageManager.getInstalledPackages(0)
+        return application.packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS)
     }
 
     fun loadInstalledApps(refresh: Boolean = true) {
@@ -119,10 +141,15 @@ class PrivilegeViewModel(application: Application) : AndroidViewModel(applicatio
                         async {
                             chunk.map { packageInfo ->
                                 val appInfo = packageInfo.applicationInfo!!
-                                Triple(
+                                val usesShizuku =
+                                    packageInfo.requestedPermissions?.contains(SHIZUKU_PERMISSION) == true
+                                packageInfo.requestedPermissions = null
+                                packageInfo.requestedPermissionsFlags = null
+                                LoadedApp(
                                     packageInfo,
                                     appInfo.loadLabel(pm).toString(),
-                                    granted(appInfo.uid)
+                                    granted(appInfo.uid),
+                                    usesShizuku
                                 )
                             }
                         }
@@ -130,12 +157,13 @@ class PrivilegeViewModel(application: Application) : AndroidViewModel(applicatio
                 }
 
                 // Pinyin tetap berurutan (HanziToPinyin singleton, thread-safety tidak dijamin).
-                loaded.associate { (packageInfo, label, isGranted) ->
-                    packageInfo.applicationInfo!!.uid to AppsViewModel.AppInfo(
-                        label = label,
-                        packageInfo = packageInfo,
-                        isAdded = isGranted,
-                        pinyin = appSearchPinyin(label)
+                loaded.associate { app ->
+                    app.packageInfo.applicationInfo!!.uid to AppsViewModel.AppInfo(
+                        label = app.label,
+                        packageInfo = app.packageInfo,
+                        isAdded = app.isGranted,
+                        pinyin = appSearchPinyin(app.label),
+                        usesShizuku = app.usesShizuku
                     )
                 }
             }

@@ -215,4 +215,17 @@
     <string name="home_banner_failed">Gambar tidak bisa dimuat</string>
     <string name="device_info">Info Perangkat</string>
     <string name="kernel_version">Kernel</string>
+    <string name="privilege_filter">Filter</string>
+    <string name="privilege_filter_shizuku">Hanya app dengan Shizuku API</string>
+    <string name="shortcut_name">Nama pintasan</string>
+    <string name="shortcut_icon">Ikon pintasan</string>
+    <string name="shortcut_icon_default">Bawaan</string>
+    <string name="shortcut_icon_banner">Banner plugin</string>
+    <string name="shortcut_icon_custom">Gambar sendiri</string>
+    <string name="shortcut_create">Buat pintasan</string>
+    <string name="shortcut_update">Perbarui pintasan</string>
+    <string name="shortcut_updated">Pintasan diperbarui</string>
+    <string name="shortcut_banner_unavailable">Banner plugin tidak tersedia</string>
+    <string name="shortcut_image_failed">Gagal memuat gambar</string>
+    <string name="shortcut_no_webui">Plugin ini tidak memiliki WebUI</string>
 </resources>

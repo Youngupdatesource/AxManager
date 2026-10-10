@@ -215,4 +215,17 @@
     <string name="home_banner_failed">无法加载该图片</string>
     <string name="device_info">设备信息</string>
     <string name="kernel_version">内核</string>
+    <string name="privilege_filter">筛选</string>
+    <string name="privilege_filter_shizuku">仅显示使用 Shizuku API 的应用</string>
+    <string name="shortcut_name">快捷方式名称</string>
+    <string name="shortcut_icon">快捷方式图标</string>
+    <string name="shortcut_icon_default">默认</string>
+    <string name="shortcut_icon_banner">插件横幅</string>
+    <string name="shortcut_icon_custom">自定义图片</string>
+    <string name="shortcut_create">创建快捷方式</string>
+    <string name="shortcut_update">更新快捷方式</string>
+    <string name="shortcut_updated">快捷方式已更新</string>
+    <string name="shortcut_banner_unavailable">插件横幅不可用</string>
+    <string name="shortcut_image_failed">图片加载失败</string>
+    <string name="shortcut_no_webui">此插件没有 WebUI</string>
 </resources>

@@ -33,6 +33,17 @@ import frb.axeron.manager.R
 import frb.axeron.manager.ui.component.SearchAppBar
 import frb.axeron.manager.ui.component.UseLifecycle
 import frb.axeron.manager.ui.viewmodel.ViewModelGlobal
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination<RootGraph>
@@ -65,6 +76,34 @@ fun PrivilegeScreen(
                 searchText = privilegeViewModel.search,
                 onSearchTextChange = { privilegeViewModel.search = it },
                 onClearClick = { privilegeViewModel.search = "" },
+                action = {
+                    var menuOpen by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { menuOpen = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.FilterList,
+                                contentDescription = stringResource(R.string.privilege_filter)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.privilege_filter_shizuku)) },
+                                leadingIcon = {
+                                    Checkbox(
+                                        checked = privilegeViewModel.shizukuOnly,
+                                        onCheckedChange = null
+                                    )
+                                },
+                                onClick = {
+                                    privilegeViewModel.updateShizukuOnly(!privilegeViewModel.shizukuOnly)
+                                }
+                            )
+                        }
+                    }
+                },
                 scrollBehavior = scrollBehavior,
 //                onBackClick = {
 //                    navigator.popBackStack()
@@ -95,7 +134,7 @@ fun PrivilegeScreen(
                     key = { it.packageName + it.uid }
                 ) { app ->
                     ListItem(
-                        modifier = Modifier.padding(end = 6.dp, top = 6.dp),
+                        modifier = Modifier.animateItem().padding(end = 6.dp, top = 6.dp),
                         headlineContent = {
                             Text(
                                 text = app.label,

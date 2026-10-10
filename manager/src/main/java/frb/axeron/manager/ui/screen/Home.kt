@@ -114,6 +114,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.layout.aspectRatio
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination<RootGraph>(start = true)
@@ -504,7 +505,7 @@ fun StatusCard(
                         Spacer(
                             Modifier
                                 .fillMaxWidth()
-                                .height(120.dp)
+                                .aspectRatio(16f / 9f)
                         )
                         StatusBannerImage(
                             file = bannerFile,

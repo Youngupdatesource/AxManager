@@ -41,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import androidx.compose.foundation.layout.aspectRatio
 
 /**
  * Penyimpanan banner kartu status Home. File disalin sekali ke filesDir (tidak bergantung pada Uri picker),
@@ -188,7 +189,7 @@ fun BannerSettingItems() {
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .fillMaxWidth()
-                    .height(96.dp)
+                    .aspectRatio(16f / 9f)
                     .clip(RoundedCornerShape(12.dp))
             )
         }

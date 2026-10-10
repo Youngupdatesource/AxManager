@@ -80,52 +80,206 @@ import frb.axeron.shared.AxeronApiConstant
 import frb.axeron.shared.PathHelper
 import kotlinx.coroutines.launch
 import java.io.File
+import android.content.pm.ShortcutManager
+import android.graphics.Bitmap
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import frb.axeron.manager.ui.component.loadPluginBannerBitmap
+import frb.axeron.manager.ui.component.readShortcutBitmap
 
-@OptIn(ExperimentalMaterial3Api::class)
+private enum class ShortcutIconSource { DEFAULT, BANNER, CUSTOM }
+
 @Composable
 fun PluginConfig(
     showDialog: Boolean,
     plugin: PluginInfo,
     onDismissRequest: () -> Unit
 ) {
-    if (showDialog) {
-        ModalBottomSheet(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-            onDismissRequest = onDismissRequest
+    if (!showDialog) return
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var name by remember(plugin.prop.id) { mutableStateOf(plugin.prop.name) }
+    var iconBitmap by remember(plugin.prop.id) { mutableStateOf<Bitmap?>(null) }
+    var iconSource by remember(plugin.prop.id) { mutableStateOf(ShortcutIconSource.DEFAULT) }
+    var loading by remember(plugin.prop.id) { mutableStateOf(false) }
+    val alreadyPinned = remember(plugin.prop.id) {
+        context.getSystemService(ShortcutManager::class.java)
+            ?.pinnedShortcuts?.any { it.id == plugin.prop.id } == true
+    }
+    val imageFailed = stringResource(R.string.shortcut_image_failed)
+    val bannerUnavailable = stringResource(R.string.shortcut_banner_unavailable)
+
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            loading = true
+            val bitmap = readShortcutBitmap(context, uri)
+            loading = false
+            if (bitmap != null) {
+                iconBitmap = bitmap
+                iconSource = ShortcutIconSource.CUSTOM
+            } else {
+                Toast.makeText(context, imageFailed, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 6.dp
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                val context = LocalContext.current
+                Text(
+                    text = stringResource(R.string.web_ui_configuration),
+                    style = MaterialTheme.typography.titleLarge
+                )
 
-                SettingsItem(
-                    label = stringResource(R.string.web_ui_configuration),
-                    iconVector = Icons.Outlined.Web,
-                ) { _, _ ->
-                    HorizontalDivider(
-                        Modifier,
-                        DividerDefaults.Thickness,
-                        MaterialTheme.colorScheme.secondaryContainer
-                    )
-                    SettingsItem(
-                        type = SettingsItemType.CHILD,
-                        enabled = plugin.hasWebUi,
-                        iconVector = Icons.Outlined.Home,
-                        label = stringResource(R.string.add_web_ui_shortcut),
-                        description = stringResource(R.string.add_web_ui_shortcut_msg),
-                        onClick = {
-                            createWebUIShortcut(
-                                context = context,
-                                plugin = plugin
-                            )
-                        }
+                if (!plugin.hasWebUi) {
+                    Text(
+                        text = stringResource(R.string.shortcut_no_webui),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
 
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.secondaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val bitmap = iconBitmap
+                        if (bitmap != null) {
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.Web,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                        if (loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                    OutlinedTextField(
+                        modifier = Modifier.weight(1f),
+                        value = name,
+                        onValueChange = { name = it.take(40) },
+                        label = { Text(stringResource(R.string.shortcut_name)) },
+                        singleLine = true
+                    )
+                }
 
+                Text(
+                    text = stringResource(R.string.shortcut_icon),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = iconSource == ShortcutIconSource.DEFAULT,
+                        onClick = {
+                            iconBitmap = null
+                            iconSource = ShortcutIconSource.DEFAULT
+                        },
+                        label = { Text(stringResource(R.string.shortcut_icon_default)) }
+                    )
+                    FilterChip(
+                        selected = iconSource == ShortcutIconSource.BANNER,
+                        enabled = plugin.prop.banner.isNotEmpty(),
+                        onClick = {
+                            scope.launch {
+                                loading = true
+                                val bitmap = loadPluginBannerBitmap(context, plugin)
+                                loading = false
+                                if (bitmap != null) {
+                                    iconBitmap = bitmap
+                                    iconSource = ShortcutIconSource.BANNER
+                                } else {
+                                    Toast.makeText(context, bannerUnavailable, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        label = { Text(stringResource(R.string.shortcut_icon_banner)) }
+                    )
+                    FilterChip(
+                        selected = iconSource == ShortcutIconSource.CUSTOM,
+                        onClick = { picker.launch("image/*") },
+                        label = { Text(stringResource(R.string.shortcut_icon_custom)) }
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismissRequest) {
+                        Text(stringResource(android.R.string.cancel))
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        enabled = plugin.hasWebUi && !loading,
+                        onClick = {
+                            createWebUIShortcut(
+                                context = context,
+                                plugin = plugin,
+                                label = name,
+                                iconBitmap = iconBitmap
+                            )
+                            onDismissRequest()
+                        }
+                    ) {
+                        Text(
+                            stringResource(
+                                if (alreadyPinned) R.string.shortcut_update else R.string.shortcut_create
+                            )
+                        )
+                    }
+                }
             }
         }
     }
@@ -161,6 +315,7 @@ fun PluginItem(
             .clip(MaterialTheme.shapes.medium)
             .combinedClickable(
                 onClick = onExpandToggle,
+                onLongClick = { showExtraSetDialog = true }
             )
     ) {
         Box(
