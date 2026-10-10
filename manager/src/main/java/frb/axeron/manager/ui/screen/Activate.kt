@@ -76,6 +76,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import rikka.compatibility.DeviceCompatibility
+import frb.axeron.manager.ui.theme.cardContainerColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination<RootGraph>
@@ -170,6 +171,9 @@ fun TcpDebuggingCard(
     val loadingDialog = rememberLoadingDialog()
 
     ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow)
+        ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 1.dp
         ),
@@ -370,6 +374,9 @@ fun WirelessDebuggingCard(
     }
 
     ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow)
+        ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 1.dp
         ),
@@ -506,6 +513,9 @@ fun RootCard(
     val loadingDialog = rememberLoadingDialog()
 
     ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow)
+        ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 1.dp
         ),
@@ -597,6 +607,9 @@ fun ComputerCard() {
     }
 
     ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow)
+        ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 1.dp
         ),

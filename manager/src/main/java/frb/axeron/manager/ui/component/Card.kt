@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import frb.axeron.manager.R
 import frb.axeron.manager.ui.viewmodel.PluginViewModel
 import frb.axeron.manager.ui.viewmodel.PrivilegeViewModel
+import frb.axeron.manager.ui.theme.cardContainerColor
 
 @Composable
 @Preview
@@ -145,7 +146,8 @@ private fun StatTile(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceContainer)
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor()),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),

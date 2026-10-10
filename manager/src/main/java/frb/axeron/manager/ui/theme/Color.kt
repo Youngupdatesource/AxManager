@@ -75,11 +75,10 @@ fun getVortexDarkColorScheme(
     val black = customColor.saturate(5f).blend(Color.Black, 0.7f)
     val white = Color.White.blend(black, 0.10f)
     val surfaceBase = Color(0xFF101010).blend(black, 0.08f)
-    val pageBackground = surfaceBase.blend(Color.Black, 0.40f)
     val surfaceBright = surfaceBase.blend(Color.White, 0.10f)
     val surfaceDim = surfaceBase.blend(Color.Black, 0.10f)
 
-    return vortexDarkColorScheme(white, black, customColor, secondary, tertiary, surfaceBase, surfaceBright, surfaceDim, pageBackground)
+    return vortexDarkColorScheme(white, black, customColor, secondary, tertiary, surfaceBase, surfaceBright, surfaceDim)
 }
 
 
@@ -91,8 +90,7 @@ private fun vortexDarkColorScheme(
     tertiary: Color,
     surfaceBase: Color,
     surfaceBright: Color,
-    surfaceDim: Color,
-    pageBackground: Color
+    surfaceDim: Color
 ) = darkColorScheme(
 
     // PRIMARY
@@ -115,7 +113,7 @@ private fun vortexDarkColorScheme(
     onTertiaryContainer = white,
 
     // BACKGROUND / SURFACE
-    background = pageBackground,
+    background = surfaceBase,
     onBackground = white,
     surface = surfaceBase,
     onSurface = white,
@@ -141,11 +139,11 @@ private fun vortexDarkColorScheme(
     // SURFACE MULTI-LAYER (Material 3 elevations)
     surfaceBright = surfaceBright,
     surfaceDim = surfaceDim,
-    surfaceContainerLowest = surfaceBase.blend(white, 0.03f),
-    surfaceContainerLow = surfaceBase.blend(white, 0.06f),
-    surfaceContainer = surfaceBase.blend(white, 0.10f),
-    surfaceContainerHigh = surfaceBase.blend(white, 0.15f),
-    surfaceContainerHighest = surfaceBase.blend(white, 0.20f),
+    surfaceContainerLowest = surfaceBase.blend(white, 0.02f),
+    surfaceContainerLow = surfaceBase.blend(white, 0.04f),
+    surfaceContainer = surfaceBase.blend(white, 0.06f),
+    surfaceContainerHigh = surfaceBase.blend(white, 0.09f),
+    surfaceContainerHighest = surfaceBase.blend(white, 0.12f),
 
     // FIXED TONES (M3 requirement untuk stabil light/dark)
     primaryFixed = primary,
@@ -176,9 +174,8 @@ fun getVortexLightColorScheme(
     val surfaceBaseLight = Color(0xFFFFFFFF).blend(white, 0.02f)
     val surfaceBrightLight = surfaceBaseLight.blend(Color.Black, 0.10f)
     val surfaceDimLight = surfaceBaseLight.blend(Color.White, 0.10f)
-    val pageBackgroundLight = surfaceBaseLight.blend(black, 0.09f)
 
-    return vortexLightColorScheme(white, black, primary, secondary, tertiary, surfaceBaseLight, surfaceBrightLight, surfaceDimLight, pageBackgroundLight)
+    return vortexLightColorScheme(white, black, primary, secondary, tertiary, surfaceBaseLight, surfaceBrightLight, surfaceDimLight)
 }
 
 private fun vortexLightColorScheme(
@@ -189,8 +186,7 @@ private fun vortexLightColorScheme(
     tertiary: Color,
     surfaceBase: Color,
     surfaceBright: Color,
-    surfaceDim: Color,
-    pageBackground: Color
+    surfaceDim: Color
 ) = lightColorScheme(
     primary = primary,
     onPrimary = white,
@@ -209,7 +205,7 @@ private fun vortexLightColorScheme(
     tertiaryContainer = tertiary.blend(black, 0.45f).blend(surfaceBase, 0.7f),
     onTertiaryContainer = black,
 
-    background = pageBackground,
+    background = surfaceBase,
     onBackground = black,
 
     surface = surfaceBase,
@@ -237,11 +233,11 @@ private fun vortexLightColorScheme(
     // SURFACE MULTI-LAYER (Material 3 elevations)
     surfaceBright = surfaceBright,
     surfaceDim = surfaceDim,
-    surfaceContainerLowest = surfaceBase,
-    surfaceContainerLow = surfaceBase.blend(black, 0.01f),
-    surfaceContainer = surfaceBase.blend(black, 0.02f),
-    surfaceContainerHigh = surfaceBase.blend(black, 0.10f),
-    surfaceContainerHighest = surfaceBase.blend(black, 0.16f),
+    surfaceContainerLowest = surfaceBase.blend(black, 0.10f),
+    surfaceContainerLow = surfaceBase.blend(black, 0.08f),
+    surfaceContainer = surfaceBase.blend(black, 0.06f),
+    surfaceContainerHigh = surfaceBase.blend(black, 0.04f),
+    surfaceContainerHighest = surfaceBase.blend(black, 0.02f),
 
     primaryFixed = primary,
     primaryFixedDim = primary.blend(black, 0.20f),

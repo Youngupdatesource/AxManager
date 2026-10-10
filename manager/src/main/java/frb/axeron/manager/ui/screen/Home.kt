@@ -115,6 +115,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.foundation.layout.aspectRatio
+import frb.axeron.manager.ui.theme.cardContainerColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination<RootGraph>(start = true)
@@ -267,6 +268,8 @@ fun SupportCard() {
     val githubRepo = "https://github.com/Youngupdatesource/AxM-Next"
 
     ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(containerColor = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow)),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         onClick = {
             uriHandler.openUri(githubRepo)
         }
@@ -306,6 +309,8 @@ fun LearnCard() {
     val learnAxManager = "https://fahrez182.github.io/AxManager"
 
     ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(containerColor = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow)),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         onClick = {
             uriHandler.openUri(learnAxManager)
         }
@@ -355,6 +360,7 @@ fun StatusCard(
         "https://fahrez182.github.io/AxManager/guide/faq.html#start-via-wireless-debugging-start-by-connecting-to-a-computer-the-permission-of-adb-is-limited"
 
     ElevatedCard(
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = run {
                 when {
@@ -744,7 +750,8 @@ fun InfoCard(activateViewModel: ActivateViewModel) {
 
     Card(
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor()),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -812,7 +819,10 @@ fun IssueReportCard() {
     val uriHandler = LocalUriHandler.current
     val githubIssueUrl = "https://github.com/Youngupdatesource/AxM-Next/issues"
 
-    ElevatedCard {
+    ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(containerColor = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow)),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

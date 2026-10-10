@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import frb.axeron.manager.ui.theme.cardContainerColor
 
 enum class SettingsItemType {
     PARENT,
@@ -48,7 +49,7 @@ enum class SettingsItemType {
 @Composable
 fun SettingsItem(
     type: SettingsItemType = SettingsItemType.PARENT,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    containerColor: Color = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow),
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     enabled: Boolean = true,
     label: String? = null,
@@ -174,7 +175,7 @@ fun SettingsItem(
 @Composable
 fun SettingsItemExpanded(
     type: SettingsItemType = SettingsItemType.PARENT,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    containerColor: Color = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow),
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     enabled: Boolean = true,
     label: String,

@@ -103,6 +103,8 @@ import frb.axeron.manager.ui.component.loadPluginBannerBitmap
 import frb.axeron.manager.ui.component.readShortcutBitmap
 import androidx.compose.foundation.shape.CircleShape
 import frb.axeron.manager.ui.component.adaptiveShortcutBitmap
+import androidx.compose.material3.CardDefaults
+import frb.axeron.manager.ui.theme.cardContainerColor
 
 private enum class ShortcutIconSource { DEFAULT, BANNER, CUSTOM }
 
@@ -318,6 +320,9 @@ fun PluginItem(
     }
 
     ElevatedCard(
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = cardContainerColor(MaterialTheme.colorScheme.surfaceContainerLow)
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
