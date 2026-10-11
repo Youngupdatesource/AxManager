@@ -3,6 +3,7 @@ package frb.axeron.reignite
 import android.ddm.DdmHandleAppName
 import android.system.ErrnoException
 import android.system.Os
+import android.system.OsConstants
 import android.util.Log
 import java.io.File
 
@@ -147,13 +148,7 @@ object Igniter {
         val standalone = isStandalone(fsData)
 
         if (SystemProp.get(tag) != "1") {
-            execWait(
-                arrayOf(
-                    "busybox",
-                    "sh" + if (standalone) " -o standalone" else "",
-                    fsData.absolutePath
-                )
-            )
+            runScript(fsData.absolutePath, standalone)
             SystemProp.set(tag, "1")
             println(" - postExecuted $name")
         }
@@ -164,13 +159,13 @@ object Igniter {
         val log = logPipe(tag)
         val standalone = isStandalone(service)
 
-        val execLine = if (standalone)
-            "exec busybox sh -o standalone \"${service.absolutePath}\""
-        else
-            "exec busybox sh \"${service.absolutePath}\""
+        val shell = Tools.word("sh")
+        val setsid = Tools.word("setsid")
+        val innerShell = if (standalone) "busybox sh -o standalone" else shell
+        val execLine = "exec $innerShell \"${service.absolutePath}\""
 
-        val service = $$"""
-            busybox setsid sh -c '
+        val script = $$"""
+            $$setsid $$shell -c '
               $$execLine
             ' $$log &
             pid=$!
@@ -178,7 +173,7 @@ object Igniter {
         """.trimIndent()
 
         println(" - startService $name")
-        exec(arrayOf("busybox", "sh", "-c", service))
+        launchShell(script)
     }
 
 
@@ -192,10 +187,10 @@ object Igniter {
         val pid = SystemProp.get("log.tag.service.$name")
         if (pid.isNotBlank() && pid != "-1") {
             println(" - try to stopping service $name:-$pid")
-            execWait(arrayOf("busybox", "kill", "-TERM", "-$pid"))
+            pid.toIntOrNull()?.let { killGroup(it) }
         }
 
-        execWait(arrayOf("busybox", "pkill", "-f", name))
+        runApplet("pkill", "-f", name)
         SystemProp.set("log.tag.service.$name", "-1")
 
         unlinkBin(bin)
@@ -203,14 +198,7 @@ object Igniter {
 
     private fun uninstallPlugin(name: String, uninstall: File, bin: File) {
         if (uninstall.exists()) {
-            val standalone = isStandalone(uninstall)
-            execWait(
-                arrayOf(
-                    "busybox",
-                    "sh" + if (standalone) " -o standalone" else "",
-                    uninstall.absolutePath
-                )
-            )
+            runScript(uninstall.absolutePath, isStandalone(uninstall))
         }
         unlinkBin(bin)
         File("$AXERONDIR/plugins/$name").deleteRecursively()
@@ -266,7 +254,63 @@ object Igniter {
         val pid = SystemProp.get("log.tag.service.$name")
         return (pid.isNotBlank() && pid != "-1")
                 || (pid.isNotBlank() && File("/proc/$pid").exists())
-                || execWait(arrayOf("busybox", "pgrep", "-f", name)) == 0
+                || runApplet("pgrep", "-f", name) == 0
+    }
+
+    private object Tools {
+        private val SYSTEM_DIRS = arrayOf("/system/bin", "/system/xbin", "/vendor/bin")
+        private val cache = HashMap<String, String?>()
+
+        @Synchronized
+        fun system(applet: String): String? {
+            if (cache.containsKey(applet)) return cache[applet]
+            val found = SYSTEM_DIRS.asSequence()
+                .map { File(it, applet) }
+                .firstOrNull { it.canExecute() && !isBusybox(it) }
+                ?.absolutePath
+            cache[applet] = found
+            return found
+        }
+
+        fun word(applet: String): String = system(applet) ?: "busybox $applet"
+
+        private fun isBusybox(file: File): Boolean = try {
+            file.canonicalFile.name.startsWith("busybox")
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun runApplet(applet: String, vararg args: String): Int {
+        val system = Tools.system(applet)
+        if (system != null) {
+            val code = execWait(arrayOf(system, *args))
+            if (code != -1) return code
+        }
+        return execWait(arrayOf("busybox", applet, *args))
+    }
+
+    private fun runScript(path: String, standalone: Boolean): Int =
+        if (standalone) execWait(arrayOf("busybox", "sh", "-o", "standalone", path))
+        else runApplet("sh", path)
+
+    private fun launchShell(script: String) {
+        val system = Tools.system("sh")
+        if (system != null) {
+            try {
+                Runtime.getRuntime().exec(arrayOf(system, "-c", script))
+                return
+            } catch (_: Exception) {
+            }
+        }
+        exec(arrayOf("busybox", "sh", "-c", script))
+    }
+
+    private fun killGroup(pid: Int) {
+        try {
+            Os.kill(-pid, OsConstants.SIGTERM)
+        } catch (_: ErrnoException) {
+        }
     }
 
     private fun execWait(cmd: Array<String>): Int =

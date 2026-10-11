@@ -229,4 +229,6 @@
     <string name="shortcut_image_failed">图片加载失败</string>
     <string name="shortcut_no_webui">此插件没有 WebUI</string>
     <string name="shortcut_icon_hint">最终形状由桌面启动器决定（圆形、圆角方形等）</string>
+    <string name="quickshell_copied_all">已复制输出</string>
+    <string name="quickshell_copy_too_large">输出过大无法放入剪贴板，已保存到 Downloads</string>
 </resources>

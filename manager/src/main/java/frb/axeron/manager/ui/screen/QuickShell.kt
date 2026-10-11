@@ -109,6 +109,15 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.os.Build
+import android.widget.Toast
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalTextToolbar
+import androidx.compose.ui.platform.TextToolbar
+import androidx.compose.ui.platform.TextToolbarStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination<RootGraph>
@@ -272,12 +281,20 @@ fun QuickShellScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewMode
                 }
             }
 
+            val assembler = remember { LineAssembler() }
+
             // collect flow
             LaunchedEffect(Unit) {
                 viewModel.output.collect { line ->
                     val raw = line.output
+                    val isStream = line.type == QuickShellViewModel.OutputType.TYPE_STDOUT ||
+                            line.type == QuickShellViewModel.OutputType.TYPE_STDERR
 
-                    if (line.type != QuickShellViewModel.OutputType.TYPE_SPACE && raw.isBlank()) return@collect
+                    if (isStream) {
+                        if (raw.isEmpty()) return@collect
+                    } else if (line.type != QuickShellViewModel.OutputType.TYPE_SPACE && raw.isBlank()) {
+                        return@collect
+                    }
                     // ===== DETECT SCREEN MODE =====
 
                     // ===== SCREEN MODE (top, watch, htop, etc) =====
@@ -301,66 +318,13 @@ fun QuickShellScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewMode
                     }
 
 
-                    // selain stdout/stderr → selalu item baru
-                    if (line.type != QuickShellViewModel.OutputType.TYPE_STDOUT && line.type != QuickShellViewModel.OutputType.TYPE_STDERR) {
+                    if (!isStream) {
+                        assembler.closeOpenLine(logs)
                         logs.add(line.copy(completed = true))
                         return@collect
                     }
 
-                    val hasNewline =
-                        raw.contains('\n')
-
-                    val hasCarriageReturn =
-                        raw.contains('\r') && !raw.contains('\n')
-
-                    val clean = raw.trimEnd('\n', '\r')
-
-                    val last = logs.lastOrNull()
-
-                    when {
-
-                        /* ===============================
-                           CASE 1: CARRIAGE RETURN (\r)
-                           overwrite baris terakhir
-                           =============================== */
-                        hasCarriageReturn && last != null &&
-                                !last.completed &&
-                                last.type == line.type -> {
-
-                            val i = logs.lastIndex
-                            logs[i] = last.copy(
-                                output = clean,
-                                completed = false
-                            )
-                        }
-
-                        /* ===============================
-                           CASE 2: LANJUT BARIS SEBELUMNYA
-                           =============================== */
-                        last != null &&
-                                !last.completed &&
-                                last.type == line.type -> {
-
-                            val i = logs.lastIndex
-                            logs[i] = last.copy(
-                                output = last.output + clean,
-                                completed = hasNewline
-                            )
-                        }
-
-                        /* ===============================
-                           CASE 3: BARIS BARU
-                           =============================== */
-                        else -> {
-                            logs.add(
-                                QuickShellViewModel.Output(
-                                    type = line.type,
-                                    output = clean,
-                                    completed = hasNewline
-                                )
-                            )
-                        }
-                    }
+                    assembler.feed(logs, line.type, raw)
                 }
             }
 
@@ -369,41 +333,56 @@ fun QuickShellScreen(navigator: DestinationsNavigator, viewModelGlobal: ViewMode
 
             val context = LocalContext.current
 
-            SelectionContainer(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .horizontalScroll(hScroll)
-                ) {
-                    LazyColumn(
-                        state = listState,
-                    ) {
-                        item {
-                            Spacer(modifier = Modifier.size(70.dp))
-                        }
-                        items(logs) { line ->
-                            if (!PrefsEnumHelper<QuickShellViewModel.OutputType>("output_")
-                                    .loadState(context, line.type, true)
-                            ) return@items
-                            BasicText(
-                                text = line.output.parseAsAnsiAnnotatedString(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    lineHeight = MaterialTheme.typography.labelSmall.fontSize, // samain dengan fontSize
-                                    lineHeightStyle = LineHeightStyle(
-                                        alignment = LineHeightStyle.Alignment.Center,
-                                        trim = LineHeightStyle.Trim.Both
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontFamily = FontFamily.Monospace
-                                ),
-                                softWrap = false,
-                            )
-                        }
+            val delegateToolbar = LocalTextToolbar.current
+            val copyAllToolbar = remember(delegateToolbar) {
+                CopyAllTextToolbar(delegateToolbar) {
+                    val outputPrefs = PrefsEnumHelper<QuickShellViewModel.OutputType>("output_")
+                    val text = logs
+                        .filter { outputPrefs.loadState(context, it.type, true) }
+                        .joinToString("\n") { it.output.parseAsAnsiAnnotatedString().text }
+                    copyTextToClipboard(context, text) {
+                        scope.launch { saveLogsToDownload(context, logs, snackBarHost) }
+                    }
+                }
+            }
 
-                        item {
-                            Spacer(modifier = Modifier.size(22.dp))
+            CompositionLocalProvider(LocalTextToolbar provides copyAllToolbar) {
+                SelectionContainer(
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .horizontalScroll(hScroll)
+                    ) {
+                        LazyColumn(
+                            state = listState,
+                        ) {
+                            item {
+                                Spacer(modifier = Modifier.size(70.dp))
+                            }
+                            items(logs) { line ->
+                                if (!PrefsEnumHelper<QuickShellViewModel.OutputType>("output_")
+                                        .loadState(context, line.type, true)
+                                ) return@items
+                                BasicText(
+                                    text = line.output.parseAsAnsiAnnotatedString(),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        lineHeight = MaterialTheme.typography.labelSmall.fontSize, // samain dengan fontSize
+                                        lineHeightStyle = LineHeightStyle(
+                                            alignment = LineHeightStyle.Alignment.Center,
+                                            trim = LineHeightStyle.Trim.Both
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontFamily = FontFamily.Monospace
+                                    ),
+                                    softWrap = false,
+                                )
+                            }
+
+                            item {
+                                Spacer(modifier = Modifier.size(22.dp))
+                            }
                         }
                     }
                 }
@@ -718,4 +697,135 @@ suspend fun saveLogsToDownload(
 }
 
 
+private class LineAssembler {
+    private val pendingCr = HashMap<QuickShellViewModel.OutputType, Boolean>()
 
+    fun closeOpenLine(logs: MutableList<QuickShellViewModel.Output>) {
+        val last = logs.lastOrNull() ?: return
+        if (!last.completed) logs[logs.lastIndex] = last.copy(completed = true)
+    }
+
+    fun feed(
+        logs: MutableList<QuickShellViewModel.Output>,
+        type: QuickShellViewModel.OutputType,
+        chunk: String
+    ) {
+        var existing = logs.lastOrNull()
+        if (existing != null && !existing.completed && existing.type != type) {
+            closeOpenLine(logs)
+            existing = null
+        }
+        if (existing != null && existing.completed) existing = null
+
+        val open = StringBuilder(existing?.output ?: "")
+        var hasOpen = existing != null
+        var carriage = pendingCr[type] == true
+        val finished = ArrayList<String>()
+
+        for (ch in chunk) {
+            if (carriage) {
+                carriage = false
+                if (ch == '\n') {
+                    finished.add(open.toString())
+                    open.setLength(0)
+                    hasOpen = false
+                    continue
+                }
+                open.setLength(0)
+                hasOpen = true
+            }
+            when (ch) {
+                '\n' -> {
+                    finished.add(open.toString())
+                    open.setLength(0)
+                    hasOpen = false
+                }
+
+                '\r' -> carriage = true
+
+                else -> {
+                    open.append(ch)
+                    hasOpen = true
+                }
+            }
+        }
+        pendingCr[type] = carriage
+
+        for ((index, text) in finished.withIndex()) {
+            if (index == 0 && existing != null) {
+                logs[logs.lastIndex] = existing.copy(output = text, completed = true)
+            } else if (text.isNotBlank()) {
+                logs.add(QuickShellViewModel.Output(type, text, completed = true))
+            }
+        }
+
+        if (hasOpen) {
+            val text = open.toString()
+            if (finished.isEmpty() && existing != null) {
+                logs[logs.lastIndex] = existing.copy(output = text, completed = false)
+            } else {
+                logs.add(QuickShellViewModel.Output(type, text, completed = false))
+            }
+        }
+    }
+}
+
+private class CopyAllTextToolbar(
+    private val delegate: TextToolbar,
+    private val copyAll: () -> Unit
+) : TextToolbar {
+    private var selectAllPressed = false
+
+    override val status: TextToolbarStatus
+        get() = delegate.status
+
+    override fun hide() = delegate.hide()
+
+    override fun showMenu(
+        rect: Rect,
+        onCopyRequested: (() -> Unit)?,
+        onPasteRequested: (() -> Unit)?,
+        onCutRequested: (() -> Unit)?,
+        onSelectAllRequested: (() -> Unit)?
+    ) {
+        if (onSelectAllRequested != null) selectAllPressed = false
+        delegate.showMenu(
+            rect,
+            onCopyRequested = onCopyRequested?.let { copy ->
+                {
+                    copy()
+                    if (selectAllPressed) copyAll()
+                }
+            },
+            onPasteRequested = onPasteRequested,
+            onCutRequested = onCutRequested,
+            onSelectAllRequested = onSelectAllRequested?.let { selectAll ->
+                {
+                    selectAllPressed = true
+                    selectAll()
+                }
+            }
+        )
+    }
+}
+
+private const val CLIPBOARD_MAX_CHARS = 240_000
+
+private fun copyTextToClipboard(context: Context, text: String, onTooLarge: () -> Unit) {
+    val copied = text.length <= CLIPBOARD_MAX_CHARS && try {
+        val clipboard = context.getSystemService(ClipboardManager::class.java)
+        clipboard.setPrimaryClip(ClipData.newPlainText("output", text))
+        true
+    } catch (e: Exception) {
+        false
+    }
+
+    if (copied) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            Toast.makeText(context, R.string.quickshell_copied_all, Toast.LENGTH_SHORT).show()
+        }
+    } else {
+        Toast.makeText(context, R.string.quickshell_copy_too_large, Toast.LENGTH_LONG).show()
+        onTooLarge()
+    }
+}

@@ -229,4 +229,6 @@
     <string name="shortcut_image_failed">Gagal memuat gambar</string>
     <string name="shortcut_no_webui">Plugin ini tidak memiliki WebUI</string>
     <string name="shortcut_icon_hint">Bentuk akhir ditentukan launcher (bundar, squircle, dan lainnya)</string>
+    <string name="quickshell_copied_all">Output disalin</string>
+    <string name="quickshell_copy_too_large">Output terlalu besar untuk clipboard, disimpan ke Downloads</string>
 </resources>

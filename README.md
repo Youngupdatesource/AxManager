@@ -53,6 +53,11 @@ AxManager explores a dedicated **ADB environment** on Android: instead of being 
 - **Server Guard:** the manager checks the server periodically (WorkManager, every 30 minutes) and restarts it with exponential backoff if it stops unexpectedly. Intentional shutdowns and restarts from the app are respected, and auto-restart can be turned off with the `server_guard_auto_restart` setting.
 - **Daemon Guard:** on every server start, the daemon logs diagnostics (cgroup, `oom_score_adj`, adbd state) and exempts the manager from battery optimization and background restrictions. This does not keep the CPU awake.
 - The server retries the manager-app lookup before exiting, so a transient failure no longer kills the daemon.
+- The plugin igniter prefers the phone's own tools (toybox) and only falls back to BusyBox when a tool is missing. Scripts that declare `ASH_STANDALONE=1` still run on BusyBox.
+
+**Quick Shell**
+- Output lines are reassembled across read chunks, so long listings (for example `find /sdcard/Download`) are no longer split in the middle of a line.
+- Selecting all and copying now copies the whole output, including lines that are not currently rendered. Outputs too large for the clipboard are saved to Downloads instead.
 
 ### Wake lock modes
 
